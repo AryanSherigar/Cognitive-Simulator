@@ -1,0 +1,40 @@
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class SimConfig(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    adrenaline_decay_rate: float = Field(default=0.18, gt=0)
+    precursor_decay_rate: float = Field(default=0.015, gt=0)
+    cortisol_decay_rate: float = Field(default=0.001, gt=0)
+    precursor_to_cortisol_rate: float = Field(default=0.003, gt=0)
+    adrenaline_impulse_rate: float = Field(default=0.72, ge=0)
+    precursor_impulse_rate: float = Field(default=0.18, ge=0)
+    overload_threshold: float = 1.15
+    shutdown_threshold: float = 1.65
+    shutdown_fatigue_weight: float = Field(default=1.0, ge=0)
+    overload_fatigue_weight: float = Field(default=0.5, ge=0)
+    min_reasoning_tokens: int = Field(default=64, ge=64)
+    max_reasoning_tokens: int = Field(default=1024, le=1024)
+    cooldown_ticks: int = Field(default=3, ge=0)
+    consolidation_interval_ticks: int = Field(default=1440, gt=0)
+    low_salience_prune_threshold: float = Field(default=0.2, ge=0, le=1)
+    retrieval_limit: int = Field(default=3, gt=0)
+    tag_score_weight: float = Field(default=0.35, ge=0)
+    somatic_score_weight: float = Field(default=0.3, ge=0)
+    embedding_score_weight: float = Field(default=0.2, ge=0)
+    threat_score_weight: float = Field(default=0.15, ge=0)
+    lighting_harsh_threshold: float = Field(default=700, ge=0)
+    lighting_dim_threshold: float = Field(default=150, ge=0)
+    ambient_alarm_threshold: float = Field(default=80, ge=0)
+    ambient_loud_threshold: float = Field(default=65, ge=0)
+    close_distance_threshold: float = Field(default=1.0, ge=0)
+    many_actors_threshold: int = Field(default=3, ge=0)
+    max_prompt_memories: int = Field(default=3, gt=0)
+    somatic_embedding_dimensions: int = Field(default=8, gt=0)
+    mock_compliance_base: float = Field(default=0.25, ge=0, le=1)
+    mock_compliance_stress: float = Field(default=0.45, ge=0, le=1)
+    mock_memory_compliance_bonus: float = Field(default=0.12, ge=0, le=1)
+    cooldown_removal_steering_bonus: float = Field(default=0.15, ge=0, le=1)
+    sensory_uncoupling_steering_scale: float = Field(default=0.75, ge=0, le=1)
+    objective_memory_compliance_scale: float = Field(default=0.85, ge=0, le=1)

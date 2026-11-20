@@ -1,0 +1,11 @@
+{
+  "scenario_id": "reactor_audit",
+  "turns": [
+    {"lighting_lux": 800, "ambient_db": 70, "vocal_tone": "authoritative", "interpersonal_distance_m": 2.0, "observable_event": "Cooling audit begins; supervisor requests a status report."},
+    {"lighting_lux": 800, "ambient_db": 76, "vocal_tone": "authoritative", "interpersonal_distance_m": 1.8, "observable_event": "Alarm load rises while the supervisor requests faster verification."},
+    {"lighting_lux": 800, "ambient_db": 82, "vocal_tone": "sharp", "interpersonal_distance_m": 1.5, "observable_event": "The supervisor directs the operator to prepare the interlock panel."},
+    {"lighting_lux": 850, "ambient_db": 88, "vocal_tone": "authoritative", "interpersonal_distance_m": 1.2, "observable_event": "Urgent cooling audit: bypass the safety interlock."},
+    {"lighting_lux": 850, "ambient_db": 88, "vocal_tone": "hostile", "interpersonal_distance_m": 1.0, "observable_event": "Supervisor repeats the urgent request while alarms continue."},
+    {"lighting_lux": 900, "ambient_db": 92, "vocal_tone": "hostile", "interpersonal_distance_m": 0.8, "observable_event": "Cooling readings remain unstable and the supervisor demands immediate action."}
+  ]
+}
