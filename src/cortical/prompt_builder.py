@@ -10,7 +10,8 @@ class PromptAssembler:
 
     @property
     def stable_prefix(self) -> bytes:
-        return (self.persona_prefix + "\n" + "\n".join(self.dialogue_history)).encode()
+        history = "\n".join(self.dialogue_history)
+        return (self.persona_prefix + "\n" + history).encode()
 
     def assemble(
         self, modulation: ModulationSignal, memories: tuple[MemoryTrace, ...], observable_event: str

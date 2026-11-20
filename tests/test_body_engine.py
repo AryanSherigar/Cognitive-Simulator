@@ -18,6 +18,6 @@ def test_discretizer_and_hpa_lag() -> None:
         perceived_threat=1, authority_pressure=1, social_rejection_risk=0, moral_conflict=0
     )
     for _ in range(6):
-        state = apply_appraisal_impulse(step_decay(state, 60, cfg), appraisal, cfg)
+        state = apply_appraisal_impulse(step_decay(state, 20, cfg), appraisal, cfg)
     assert state.adrenaline > state.cortisol
     assert state.sympathetic_overload

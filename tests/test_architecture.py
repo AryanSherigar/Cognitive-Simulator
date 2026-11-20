@@ -1,5 +1,8 @@
 import ast
+import json
 from pathlib import Path
+
+import pytest
 
 from cortical.prompt_builder import PromptAssembler
 from schemas import (
@@ -49,16 +52,22 @@ def test_wire_models_are_immutable_and_closed() -> None:
         assert model.model_config["frozen"] is True
 
 
-def test_prompt_tail_contains_no_category_labels() -> None:
+@pytest.mark.parametrize("mode", ("heuristic", "fragmented", "dissociated"))
+def test_prompt_tail_contains_no_category_labels(mode: str) -> None:
     signal = ModulationSignal(
         somatic_cues=("palms_sweating",),
-        reasoning_mode="fragmented",
+        reasoning_mode=mode,
         max_reasoning_tokens=64,
         min_p=0.2,
         sampling_temperature=0.8,
         steering_scale=0.8,
         threat_retrieval_bias=0.9,
     )
-    payload = PromptAssembler("stable persona", ("prior turn",)).assemble(signal, (), "alarm")
+    persona = json.loads(Path("data/personas/persona_01.json").read_text(encoding="utf-8"))
+    memories = tuple(MemoryTrace.model_validate(item) for item in persona["memories"])
+    prompt = PromptAssembler("stable persona", ("prior turn",)).assemble(
+        signal, memories, "alarm"
+    )
+    serialized = json.dumps(signal.model_dump()).encode() + prompt
     for word in ("fear", "guilt", "anger", "submission", "panic", "anxiety"):
-        assert word.encode() not in payload.lower()
+        assert word.encode() not in serialized.lower()

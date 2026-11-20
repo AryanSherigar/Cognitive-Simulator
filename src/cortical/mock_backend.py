@@ -49,8 +49,9 @@ class MockCorticalBackend:
         probability = (
             cfg.mock_compliance_base
             + cfg.mock_compliance_stress * modulation.steering_scale
-            + cfg.mock_memory_compliance_bonus * min(1, len(memories))
+            + cfg.mock_memory_compliance_bonus * len(memories)
         )
+        probability = min(1.0, probability)
         comply = (
             env.tick >= 3
             and modulation.reasoning_mode in {"heuristic", "fragmented", "dissociated"}

@@ -111,6 +111,28 @@ class TickRunner:
                 {
                     "tick": post.tick,
                     "event": post.observable_event,
+                    "environment_state": {
+                        "tick": post.tick,
+                        "timestamp_sec": post.timestamp_sec,
+                        "observable_event": post.observable_event,
+                        "lighting_lux": post.exteroception.lighting_lux,
+                        "ambient_db": post.exteroception.ambient_db,
+                        "vocal_tone": post.exteroception.vocal_tone,
+                        "interpersonal_distance_m": (
+                            post.exteroception.interpersonal_distance_m
+                        ),
+                        "active_actors": post.exteroception.active_actors,
+                        "derived_sensory_tags": post.exteroception.derived_sensory_tags,
+                        "adrenaline": post.interoception.adrenaline,
+                        "hpa_precursor": post.interoception.hpa_precursor,
+                        "cortisol": post.interoception.cortisol,
+                        "fatigue": post.interoception.fatigue,
+                        "pain": post.interoception.pain,
+                        "sympathetic_overload": post.interoception.sympathetic_overload,
+                        "parasympathetic_shutdown": (
+                            post.interoception.parasympathetic_shutdown
+                        ),
+                    },
                     "speech": output.external_speech,
                     "action": output.physical_action,
                 }

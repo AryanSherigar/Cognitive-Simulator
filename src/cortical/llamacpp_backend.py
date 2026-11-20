@@ -12,7 +12,10 @@ from schemas import (
     EnvState,
     MemoryTrace,
     ModulationSignal,
+    SimConfig,
 )
+
+from .prompt_builder import PromptAssembler
 
 
 class _ChatClient(Protocol):
@@ -47,6 +50,9 @@ def _validated_output(
     system_prompt: str,
     user_prompt: str,
     model: type[BaseModel],
+    temperature: float,
+    max_tokens: int,
+    min_p: float,
 ) -> BaseModel:
     response = client.create_chat_completion(
         messages=(
@@ -54,14 +60,22 @@ def _validated_output(
             {"role": "user", "content": user_prompt},
         ),
         grammar=grammar,
-        temperature=0.2,
+        temperature=temperature,
+        max_tokens=max_tokens,
+        min_p=min_p,
     )
     raw = json.loads(_read_content(response))  # type: ignore[misc]
     return model.model_validate(raw)  # type: ignore[misc]
 
 
 class LlamaCppBackend:
-    def __init__(self, model_path: str, **kwargs: object) -> None:
+    def __init__(
+        self,
+        model_path: str,
+        persona_prefix: str = "",
+        cfg: SimConfig | None = None,
+        **kwargs: object,
+    ) -> None:
         try:
             module = importlib.import_module("llama_cpp")
         except ImportError as exc:
@@ -69,6 +83,13 @@ class LlamaCppBackend:
         library = cast(_LlamaModule, module)
         self._client = library.Llama(model_path, **kwargs)
         self._grammar_factory = library.LlamaGrammar
+        self._persona_prefix = persona_prefix
+        self._cfg = cfg or SimConfig()
+        self._dialogue_history: list[str] = []
+        self._last_prefix = b""
+
+    def _prompt_assembler(self) -> PromptAssembler:
+        return PromptAssembler(self._persona_prefix, tuple(self._dialogue_history))
 
     def _grammar(self, model: type[BaseModel]) -> object:
         schema = json.dumps(model.model_json_schema(), separators=(",", ":"))  # type: ignore[misc]
@@ -81,24 +102,36 @@ class LlamaCppBackend:
             "Return only the requested structured appraisal.",
             env.observable_event,
             AppraisalVec,
+            self._cfg.default_sampling_temperature,
+            self._cfg.max_reasoning_tokens,
+            self._cfg.token_load_floor,
         )
         return cast(AppraisalVec, result)
 
     def formulate(
         self, env: EnvState, modulation: ModulationSignal, memories: tuple[MemoryTrace, ...]
     ) -> CorticalTurnOutput:
-        prompt = (
-            f"event={env.observable_event}; mode={modulation.reasoning_mode}; "
-            f"cues={','.join(modulation.somatic_cues)}; memories={len(memories)}"
-        )
+        assembler = self._prompt_assembler()
+        prefix = assembler.stable_prefix
+        if not prefix.startswith(self._last_prefix):
+            raise RuntimeError("cortical dialogue prefix must extend chronologically")
+        self._last_prefix = prefix
+        prompt = assembler.assemble(modulation, memories, env.observable_event).decode("utf-8")
         result = _validated_output(
             self._client,
             self._grammar(CorticalTurnOutput),
             "Return only the requested structured turn output.",
             prompt,
             CorticalTurnOutput,
+            modulation.sampling_temperature,
+            modulation.max_reasoning_tokens,
+            modulation.min_p,
         )
-        return cast(CorticalTurnOutput, result)
+        output = cast(CorticalTurnOutput, result)
+        self._dialogue_history.extend(
+            (f"event={env.observable_event}", f"speech={output.external_speech}")
+        )
+        return output
 
     def consolidate(
         self, env: EnvState, modulation: ModulationSignal, output: CorticalTurnOutput
@@ -113,5 +146,8 @@ class LlamaCppBackend:
             "Return only the requested structured consolidation.",
             prompt,
             ConsolidationOutput,
+            self._cfg.default_sampling_temperature,
+            self._cfg.max_reasoning_tokens,
+            self._cfg.token_load_floor,
         )
         return cast(ConsolidationOutput, result)

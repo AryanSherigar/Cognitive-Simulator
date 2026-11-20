@@ -15,5 +15,9 @@ def test_prompt_prefix_is_stable() -> None:
     )
     assembler = PromptAssembler("persona", ("history",))
     prefix = assembler.stable_prefix
-    assert assembler.assemble(signal, (), "event").startswith(prefix)
+    first = assembler.assemble(signal, (), "event")
+    assert first.startswith(prefix)
+    next_assembler = PromptAssembler("persona", ("history", "new dialogue"))
+    assert next_assembler.stable_prefix.startswith(prefix)
+    assert next_assembler.assemble(signal, (), "next event").startswith(prefix)
     assert MockCorticalBackend(1)

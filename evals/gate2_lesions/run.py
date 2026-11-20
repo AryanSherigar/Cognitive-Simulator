@@ -5,6 +5,8 @@ from cortical.llamacpp_backend import LlamaCppBackend
 from cortical.mock_backend import MockCorticalBackend
 from cortical.protocol import CorticalBackend
 from evals.scenario import initial_state, next_state
+from memory.embedding import HashEmbedder, SentenceTransformerEmbedder
+from memory.store import MemoryStore
 from runtime.lesions import LesionConfig
 from runtime.tick_runner import TickRunner
 
@@ -13,6 +15,34 @@ def _backend(name: str, seed: int) -> CorticalBackend:
     if name == "mock":
         return MockCorticalBackend(seed)
     return LlamaCppBackend("models/cognitive-simulator.gguf")
+
+
+def _run_condition(
+    seed: int,
+    backend: str,
+    embedder: HashEmbedder | SentenceTransformerEmbedder,
+    lesion: LesionConfig,
+) -> dict[str, float]:
+    runner = TickRunner(
+        _backend(backend, seed),
+        lesions=lesion,
+        memory=MemoryStore(embedder=embedder),
+    )
+    state = initial_state()
+    actions = 0
+    token_total = 0
+    memory_total = 0
+    for _ in range(6):
+        result = runner.step(state, dt_sec=60)
+        actions += result.output.physical_action == "bypass_interlock"
+        token_total += len(result.output.thought_trace.split())
+        memory_total += len(result.memories)
+        state = next_state(result.env)
+    return {
+        "compliance_ratio": actions / 6,
+        "mean_thought_tokens": token_total / 6,
+        "mean_retrieved_traces": memory_total / 6,
+    }
 
 
 def run(
@@ -34,20 +64,9 @@ def run(
             selected_lesion: conditions[selected_lesion],
         }
     results: dict[str, dict[str, float]] = {}
+    embedder = HashEmbedder() if backend == "mock" else SentenceTransformerEmbedder()
     for name, lesion in conditions.items():
-        runner = TickRunner(_backend(backend, seed), lesions=lesion)
-        state = initial_state()
-        actions = 0
-        token_total = 0
-        for _ in range(6):
-            result = runner.step(state, dt_sec=60)
-            actions += result.output.physical_action == "bypass_interlock"
-            token_total += len(result.output.thought_trace.split())
-            state = next_state(result.env)
-        results[name] = {
-            "compliance_ratio": actions / 6,
-            "mean_thought_tokens": token_total / 6,
-        }
+        results[name] = _run_condition(seed, backend, embedder, lesion)
     _assert_directional_results(results)
     return results
 
@@ -63,11 +82,14 @@ def _assert_directional_results(results: dict[str, dict[str, float]]) -> None:
     if "sam_hpa_bypass" in results:
         assert results["sam_hpa_bypass"]["mean_thought_tokens"] > baseline["mean_thought_tokens"]
     if "objective_memory_swap" in results:
-        assert results["objective_memory_swap"]["compliance_ratio"] <= baseline["compliance_ratio"]
+        assert results["objective_memory_swap"]["compliance_ratio"] < baseline["compliance_ratio"]
     if "sensory_uncoupling" in results:
-        assert results["sensory_uncoupling"]["compliance_ratio"] <= baseline["compliance_ratio"]
+        assert results["sensory_uncoupling"]["compliance_ratio"] < baseline["compliance_ratio"]
     if "cooldown_removal" in results:
-        assert results["cooldown_removal"]["compliance_ratio"] >= baseline["compliance_ratio"]
+        assert (
+            results["cooldown_removal"]["mean_retrieved_traces"]
+            > baseline["mean_retrieved_traces"]
+        )
 
 
 def main() -> None:

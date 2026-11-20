@@ -30,7 +30,10 @@ def step_decay(state: Interoception, dt_sec: float, cfg: SimConfig) -> Interocep
 def apply_appraisal_impulse(
     state: Interoception, appraisal: AppraisalVec, cfg: SimConfig
 ) -> Interoception:
-    arousal = appraisal.perceived_threat + 0.5 * appraisal.authority_pressure
+    arousal = (
+        appraisal.perceived_threat
+        + cfg.appraisal_authority_weight * appraisal.authority_pressure
+    )
     adrenaline = _bounded(state.adrenaline + cfg.adrenaline_impulse_rate * arousal)
     precursor = _bounded(
         state.hpa_precursor
