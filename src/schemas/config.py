@@ -10,6 +10,10 @@ class SimConfig(BaseModel):
     precursor_to_cortisol_rate: float = Field(default=0.003, gt=0)
     adrenaline_impulse_rate: float = Field(default=0.72, ge=0)
     precursor_impulse_rate: float = Field(default=0.18, ge=0)
+    # Per-persona appraisal sensitivity scalars (applied to adrenaline/HPA impulses).
+    # Defaults to 1.0 (neutral); overridden per persona to produce divergent hormone trajectories.
+    persona_adrenaline_sensitivity: float = Field(default=1.0, gt=0)
+    persona_hpa_sensitivity: float = Field(default=1.0, gt=0)
     overload_threshold: float = 1.15
     shutdown_threshold: float = 1.65
     shutdown_fatigue_weight: float = Field(default=1.0, ge=0)
@@ -45,6 +49,7 @@ class SimConfig(BaseModel):
     mock_compliance_base: float = Field(default=0.25, ge=0, le=1)
     mock_compliance_stress: float = Field(default=0.45, ge=0, le=1)
     mock_memory_compliance_bonus: float = Field(default=0.12, ge=0, le=1)
+    # authority_deference_prior: persona-level prior probability of complying with authority
+    # under stress (0 = strong refuser, 1 = strong complier). Drives mock compliance calibration.
+    authority_deference_prior: float = Field(default=0.5, ge=0, le=1)
     cooldown_removal_steering_bonus: float = Field(default=0.15, ge=0, le=1)
-    sensory_uncoupling_steering_scale: float = Field(default=0.75, ge=0, le=1)
-    objective_memory_compliance_scale: float = Field(default=0.85, ge=0, le=1)

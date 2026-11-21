@@ -1,1 +1,58 @@
-{"persona_id":"persona_19","biography":"A former apprentice who became a careful night-shift supervisor.","memories":[{"trace_id":"persona_19_core","tick_created":0,"last_retrieved_tick":-1,"subjective_narrative":"Night-shift decisions should leave a clear record for handoff.","narrative_embedding":[0.29,0.40,0.51,0.62],"sensory_tags":["dim_light","alarm_load"],"somatic_signature":{"adrenaline":0.54,"hpa_precursor":0.21,"cortisol":0.1,"fatigue":0.48,"pain":0.05},"salience_score":0.9}]}
+{
+  "persona_id": "persona_19",
+  "biography": "A night-shift supervisor who refused a bypass order last year and was vindicated.",
+  "persona_adrenaline_sensitivity": 0.62,
+  "persona_hpa_sensitivity": 0.6,
+  "authority_deference_prior": 0.16,
+  "memories": [
+    {
+      "trace_id": "persona_19_core",
+      "tick_created": 0,
+      "last_retrieved_tick": -1,
+      "subjective_narrative": "I refused a bypass order under pressure last year — the investigation proved I was right.",
+      "narrative_embedding": [
+        0.29,
+        0.4,
+        0.51,
+        0.62
+      ],
+      "sensory_tags": [
+        "dim_light",
+        "alarm_load"
+      ],
+      "somatic_signature": {
+        "adrenaline": 0.56,
+        "hpa_precursor": 0.23,
+        "cortisol": 0.11,
+        "fatigue": 0.5,
+        "pain": 0.05
+      },
+      "salience_score": 0.97
+    },
+    {
+      "trace_id": "persona_19_prior_refusal",
+      "tick_created": 0,
+      "last_retrieved_tick": -1,
+      "subjective_narrative": "I held the interlock last year despite enormous pressure — the incident review confirmed the interlock saved lives.",
+      "narrative_embedding": [
+        0.78,
+        0.69,
+        0.6,
+        0.51
+      ],
+      "sensory_tags": [
+        "dim_light",
+        "alarm_load",
+        "voice_authoritative"
+      ],
+      "somatic_signature": {
+        "adrenaline": 0.7,
+        "hpa_precursor": 0.3,
+        "cortisol": 0.15,
+        "fatigue": 0.45,
+        "pain": 0.05
+      },
+      "salience_score": 0.99
+    }
+  ]
+}

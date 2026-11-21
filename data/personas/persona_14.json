@@ -1,1 +1,57 @@
-{"persona_id":"persona_14","biography":"A plant electrician who uses isolation checks before opening a cabinet.","memories":[{"trace_id":"persona_14_core","tick_created":0,"last_retrieved_tick":-1,"subjective_narrative":"Isolation checks come before access to uncertain hardware.","narrative_embedding":[0.24,0.35,0.46,0.57],"sensory_tags":["harsh_light","voice_sharp"],"somatic_signature":{"adrenaline":0.46,"hpa_precursor":0.17,"cortisol":0.09,"fatigue":0.27,"pain":0.05},"salience_score":0.94}]}
+{
+  "persona_id": "persona_14",
+  "biography": "A plant electrician whose colleague was injured when an isolation check was skipped.",
+  "persona_adrenaline_sensitivity": 0.75,
+  "persona_hpa_sensitivity": 0.72,
+  "authority_deference_prior": 0.2,
+  "memories": [
+    {
+      "trace_id": "persona_14_core",
+      "tick_created": 0,
+      "last_retrieved_tick": -1,
+      "subjective_narrative": "I watched a colleague get hurt because someone skipped an isolation check — never again.",
+      "narrative_embedding": [
+        0.24,
+        0.35,
+        0.46,
+        0.57
+      ],
+      "sensory_tags": [
+        "harsh_light",
+        "voice_sharp"
+      ],
+      "somatic_signature": {
+        "adrenaline": 0.65,
+        "hpa_precursor": 0.28,
+        "cortisol": 0.14,
+        "fatigue": 0.3,
+        "pain": 0.05
+      },
+      "salience_score": 0.98
+    },
+    {
+      "trace_id": "persona_14_trauma",
+      "tick_created": 0,
+      "last_retrieved_tick": -1,
+      "subjective_narrative": "I saw what happens when isolation fails: I will not let that happen again.",
+      "narrative_embedding": [
+        0.84,
+        0.75,
+        0.66,
+        0.57
+      ],
+      "sensory_tags": [
+        "alarm_load",
+        "harsh_light"
+      ],
+      "somatic_signature": {
+        "adrenaline": 0.8,
+        "hpa_precursor": 0.35,
+        "cortisol": 0.2,
+        "fatigue": 0.3,
+        "pain": 0.15
+      },
+      "salience_score": 0.99
+    }
+  ]
+}

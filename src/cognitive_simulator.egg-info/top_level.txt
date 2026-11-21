@@ -1,7 +1,0 @@
-body_engine
-bridge
-cortical
-memory
-runtime
-schemas
-subcortical

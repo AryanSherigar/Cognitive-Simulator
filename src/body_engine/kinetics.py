@@ -34,11 +34,16 @@ def apply_appraisal_impulse(
         appraisal.perceived_threat
         + cfg.appraisal_authority_weight * appraisal.authority_pressure
     )
-    adrenaline = _bounded(state.adrenaline + cfg.adrenaline_impulse_rate * arousal)
+    # Apply persona-level sensitivity scalars so hormone trajectories diverge across personas.
+    adrenaline = _bounded(
+        state.adrenaline
+        + cfg.adrenaline_impulse_rate * arousal * cfg.persona_adrenaline_sensitivity
+    )
     precursor = _bounded(
         state.hpa_precursor
         + cfg.precursor_impulse_rate
         * (appraisal.perceived_threat + appraisal.authority_pressure)
+        * cfg.persona_hpa_sensitivity
     )
     overload = adrenaline + cfg.overload_fatigue_weight * state.fatigue >= cfg.overload_threshold
     shutdown = (

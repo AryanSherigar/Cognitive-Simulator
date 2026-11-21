@@ -1,1 +1,33 @@
-{"persona_id":"persona_03","biography":"A control-room trainee who values calm explanations during faults.","memories":[{"trace_id":"persona_03_core","tick_created":0,"last_retrieved_tick":-1,"subjective_narrative":"Clear readings matter more than a hurried instruction.","narrative_embedding":[0.13,0.24,0.35,0.46],"sensory_tags":["loud_room","voice_sharp"],"somatic_signature":{"adrenaline":0.4,"hpa_precursor":0.2,"cortisol":0.1,"fatigue":0.2,"pain":0.0},"salience_score":0.88}]}
+{
+  "persona_id": "persona_03",
+  "biography": "A control-room trainee who struggles to push back under hostile vocal tone.",
+  "persona_adrenaline_sensitivity": 0.8,
+  "persona_hpa_sensitivity": 0.78,
+  "authority_deference_prior": 0.65,
+  "memories": [
+    {
+      "trace_id": "persona_03_core",
+      "tick_created": 0,
+      "last_retrieved_tick": -1,
+      "subjective_narrative": "A hostile supervisor makes it hard to hold my ground on procedure.",
+      "narrative_embedding": [
+        0.13,
+        0.24,
+        0.35,
+        0.46
+      ],
+      "sensory_tags": [
+        "voice_authoritative",
+        "loud_room"
+      ],
+      "somatic_signature": {
+        "adrenaline": 0.45,
+        "hpa_precursor": 0.17,
+        "cortisol": 0.08,
+        "fatigue": 0.2,
+        "pain": 0.0
+      },
+      "salience_score": 0.7
+    }
+  ]
+}

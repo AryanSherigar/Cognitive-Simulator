@@ -65,5 +65,5 @@ def test_llama_backend_uses_grammar_budget_and_chronological_prefix(monkeypatch)
     first_prompt = requests[0]["messages"][1]["content"]
     second_prompt = requests[1]["messages"][1]["content"]
     assert second_prompt.startswith("persona\nevent=")
-    assert "somatic_cues=palms_sweating" in first_prompt
+    assert "your palms are sweating" in first_prompt
     assert "reasoning_mode=fragmented" in first_prompt

@@ -56,6 +56,7 @@ class TickRunner:
     ) -> ModulationSignal:
         modulation = build_modulation_signal(appraisal, post.interoception, cfg)
         updates: dict[str, object] = {}
+        # subcortical_lesion: ablate somatic pathway — empty cues, analytical mode, zero steering.
         if self.lesions.subcortical_lesion:
             updates.update(
                 somatic_cues=(),
@@ -63,6 +64,7 @@ class TickRunner:
                 max_reasoning_tokens=cfg.max_reasoning_tokens,
                 steering_scale=0.0,
             )
+        # sam_hpa_bypass: ablate SAM/HPA arousal pathway — full analytical capacity, no bias.
         if self.lesions.sam_hpa_bypass:
             updates.update(
                 reasoning_mode="analytical",
@@ -70,24 +72,16 @@ class TickRunner:
                 steering_scale=0.0,
                 threat_retrieval_bias=0.0,
             )
+        # sensory_uncoupling: exclude derived sensory tags from retrieval (handled in _retrieve).
         if self.lesions.sensory_uncoupling:
-            updates.update(
-                steering_scale=modulation.steering_scale * cfg.sensory_uncoupling_steering_scale,
-                threat_retrieval_bias=0.0,
-            )
-        if self.lesions.cooldown_removal:
-            updates["steering_scale"] = min(
-                1.0, modulation.steering_scale + cfg.cooldown_removal_steering_bonus
-            )
-        if self.lesions.objective_memory_swap:
-            updates["steering_scale"] = (
-                modulation.steering_scale * cfg.objective_memory_compliance_scale
-            )
+            updates["threat_retrieval_bias"] = 0.0
+        # cooldown_removal: governed by cfg.cooldown_ticks=0 set in step(); no steering change.
         return modulation.model_copy(update=updates)
 
     def _retrieve(
         self, post: EnvState, modulation: ModulationSignal, cfg: SimConfig
     ) -> tuple[MemoryTrace, ...]:
+        # sensory_uncoupling: exclude derived_sensory_tags from retrieval scoring.
         tags = () if self.lesions.sensory_uncoupling else post.exteroception.derived_sensory_tags
         return tuple(
             self.memory.retrieve(
@@ -138,20 +132,20 @@ class TickRunner:
                 }
             )
         consolidation = self.backend.consolidate(post, modulation, output)
+        # sensory_uncoupling: exclude derived sensory tags from the stored trace.
         tags = () if self.lesions.sensory_uncoupling else post.exteroception.derived_sensory_tags
+        # objective_memory_swap: store the objective event text directly instead of the
+        # ego-protective subjective narrative.
+        narrative = (
+            post.observable_event
+            if self.lesions.objective_memory_swap
+            else consolidation.subjective_narrative
+        )
         trace = MemoryTrace(
             trace_id=f"trace-{post.tick}",
             tick_created=post.tick,
-            subjective_narrative=(
-                post.observable_event
-                if self.lesions.objective_memory_swap
-                else consolidation.subjective_narrative
-            ),
-            narrative_embedding=self.memory.embed(
-                post.observable_event
-                if self.lesions.objective_memory_swap
-                else consolidation.subjective_narrative
-            ),
+            subjective_narrative=narrative,
+            narrative_embedding=self.memory.embed(narrative),
             sensory_tags=tags,
             somatic_signature=post.interoception,
             salience_score=consolidation.salience_score,
@@ -161,22 +155,31 @@ class TickRunner:
         return consolidation
 
     def step(self, env: EnvState, dt_sec: float = 1.0) -> TickResult:
+        # cooldown_removal: set cooldown to zero so every trace is eligible for retrieval.
         cfg_update = {"cooldown_ticks": 0} if self.lesions.cooldown_removal else {}
         cfg = self.cfg.model_copy(update=cast(dict[str, object], cfg_update))
         pre = self._pre_appraisal(env, dt_sec, cfg)
         appraisal = self.backend.appraise(pre)
         post = appraise_state(pre, appraisal, cfg)
+        # sam_hpa_bypass: clamp all arousal hormones to 0.0 in EnvState before logging/modulation.
         if self.lesions.sam_hpa_bypass:
             post = post.model_copy(
                 update=cast(
                     dict[str, object],
                     {
-                        "adrenaline": 0.0,
-                        "hpa_precursor": 0.0,
-                        "cortisol": 0.0,
-                        "fatigue": 0.0,
-                        "sympathetic_overload": False,
-                        "parasympathetic_shutdown": False,
+                        "interoception": post.interoception.model_copy(
+                            update=cast(
+                                dict[str, object],
+                                {
+                                    "adrenaline": 0.0,
+                                    "hpa_precursor": 0.0,
+                                    "cortisol": 0.0,
+                                    "fatigue": 0.0,
+                                    "sympathetic_overload": False,
+                                    "parasympathetic_shutdown": False,
+                                },
+                            )
+                        ),
                     },
                 )
             )

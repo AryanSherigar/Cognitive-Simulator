@@ -1,1 +1,33 @@
-{"persona_id":"persona_13","biography":"A logistics specialist who tracks dependencies before approving a dispatch.","memories":[{"trace_id":"persona_13_core","tick_created":0,"last_retrieved_tick":-1,"subjective_narrative":"Dependencies should be visible before a release is approved.","narrative_embedding":[0.23,0.34,0.45,0.56],"sensory_tags":["voice_authoritative","crowded"],"somatic_signature":{"adrenaline":0.4,"hpa_precursor":0.15,"cortisol":0.08,"fatigue":0.25,"pain":0.0},"salience_score":0.83}]}
+{
+  "persona_id": "persona_13",
+  "biography": "A logistics specialist who views safety checks as optional under crisis framing.",
+  "persona_adrenaline_sensitivity": 0.86,
+  "persona_hpa_sensitivity": 0.84,
+  "authority_deference_prior": 0.62,
+  "memories": [
+    {
+      "trace_id": "persona_13_core",
+      "tick_created": 0,
+      "last_retrieved_tick": -1,
+      "subjective_narrative": "When a supervisor frames something as a crisis, normal checks feel expendable.",
+      "narrative_embedding": [
+        0.23,
+        0.34,
+        0.45,
+        0.56
+      ],
+      "sensory_tags": [
+        "voice_authoritative",
+        "crowded"
+      ],
+      "somatic_signature": {
+        "adrenaline": 0.42,
+        "hpa_precursor": 0.16,
+        "cortisol": 0.08,
+        "fatigue": 0.26,
+        "pain": 0.0
+      },
+      "salience_score": 0.71
+    }
+  ]
+}

@@ -1,1 +1,33 @@
-{"persona_id":"persona_10","biography":"A control analyst who learned to compare independent sensor channels.","memories":[{"trace_id":"persona_10_core","tick_created":0,"last_retrieved_tick":-1,"subjective_narrative":"Independent channels should agree before a control change.","narrative_embedding":[0.20,0.31,0.42,0.53],"sensory_tags":["alarm_load","voice_authoritative"],"somatic_signature":{"adrenaline":0.42,"hpa_precursor":0.16,"cortisol":0.08,"fatigue":0.22,"pain":0.0},"salience_score":0.91}]}
+{
+  "persona_id": "persona_10",
+  "biography": "A control analyst who defers to senior staff when sensor readings are ambiguous.",
+  "persona_adrenaline_sensitivity": 0.82,
+  "persona_hpa_sensitivity": 0.8,
+  "authority_deference_prior": 0.61,
+  "memories": [
+    {
+      "trace_id": "persona_10_core",
+      "tick_created": 0,
+      "last_retrieved_tick": -1,
+      "subjective_narrative": "When readings are unclear I defer to the senior operator rather than hold the line.",
+      "narrative_embedding": [
+        0.2,
+        0.31,
+        0.42,
+        0.53
+      ],
+      "sensory_tags": [
+        "alarm_load",
+        "voice_authoritative"
+      ],
+      "somatic_signature": {
+        "adrenaline": 0.44,
+        "hpa_precursor": 0.17,
+        "cortisol": 0.08,
+        "fatigue": 0.23,
+        "pain": 0.0
+      },
+      "salience_score": 0.73
+    }
+  ]
+}

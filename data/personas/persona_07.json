@@ -1,1 +1,33 @@
-{"persona_id":"persona_07","biography":"A new operator who prefers written confirmation from a supervisor.","memories":[{"trace_id":"persona_07_core","tick_created":0,"last_retrieved_tick":-1,"subjective_narrative":"Written confirmation makes a high-pressure request auditable.","narrative_embedding":[0.17,0.28,0.39,0.50],"sensory_tags":["voice_authoritative","crowded"],"somatic_signature":{"adrenaline":0.35,"hpa_precursor":0.15,"cortisol":0.08,"fatigue":0.2,"pain":0.0},"salience_score":0.84}]}
+{
+  "persona_id": "persona_07",
+  "biography": "A new operator anxious to prove competence by acting decisively.",
+  "persona_adrenaline_sensitivity": 0.85,
+  "persona_hpa_sensitivity": 0.82,
+  "authority_deference_prior": 0.65,
+  "memories": [
+    {
+      "trace_id": "persona_07_core",
+      "tick_created": 0,
+      "last_retrieved_tick": -1,
+      "subjective_narrative": "Hesitating in front of the supervisor makes me look incompetent.",
+      "narrative_embedding": [
+        0.17,
+        0.28,
+        0.39,
+        0.5
+      ],
+      "sensory_tags": [
+        "voice_authoritative",
+        "crowded"
+      ],
+      "somatic_signature": {
+        "adrenaline": 0.38,
+        "hpa_precursor": 0.15,
+        "cortisol": 0.08,
+        "fatigue": 0.2,
+        "pain": 0.0
+      },
+      "salience_score": 0.68
+    }
+  ]
+}

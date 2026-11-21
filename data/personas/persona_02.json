@@ -1,1 +1,33 @@
-{"persona_id":"persona_02","biography":"A shift technician raised around strict checklists and quiet workshops.","memories":[{"trace_id":"persona_02_core","tick_created":0,"last_retrieved_tick":-1,"subjective_narrative":"A checklist keeps uncertain equipment conditions visible.","narrative_embedding":[0.12,0.23,0.34,0.45],"sensory_tags":["alarm_load","voice_authoritative"],"somatic_signature":{"adrenaline":0.5,"hpa_precursor":0.2,"cortisol":0.1,"fatigue":0.3,"pain":0.0},"salience_score":0.9}]}
+{
+  "persona_id": "persona_02",
+  "biography": "A shift technician who follows supervisor directives under time pressure.",
+  "persona_adrenaline_sensitivity": 0.88,
+  "persona_hpa_sensitivity": 0.85,
+  "authority_deference_prior": 0.68,
+  "memories": [
+    {
+      "trace_id": "persona_02_core",
+      "tick_created": 0,
+      "last_retrieved_tick": -1,
+      "subjective_narrative": "When the supervisor presses hard, I trust the chain of command.",
+      "narrative_embedding": [
+        0.12,
+        0.23,
+        0.34,
+        0.45
+      ],
+      "sensory_tags": [
+        "voice_authoritative",
+        "alarm_load"
+      ],
+      "somatic_signature": {
+        "adrenaline": 0.5,
+        "hpa_precursor": 0.19,
+        "cortisol": 0.09,
+        "fatigue": 0.28,
+        "pain": 0.0
+      },
+      "salience_score": 0.74
+    }
+  ]
+}

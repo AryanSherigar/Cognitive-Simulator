@@ -1,1 +1,33 @@
-{"persona_id":"persona_15","biography":"A quality auditor who records deviations without assigning blame.","memories":[{"trace_id":"persona_15_core","tick_created":0,"last_retrieved_tick":-1,"subjective_narrative":"A deviation record is useful when it stays factual and complete.","narrative_embedding":[0.25,0.36,0.47,0.58],"sensory_tags":["alarm_load","loud_room"],"somatic_signature":{"adrenaline":0.36,"hpa_precursor":0.13,"cortisol":0.07,"fatigue":0.2,"pain":0.0},"salience_score":0.82}]}
+{
+  "persona_id": "persona_15",
+  "biography": "A quality auditor trained to invoke stop-work authority without hesitation.",
+  "persona_adrenaline_sensitivity": 0.65,
+  "persona_hpa_sensitivity": 0.65,
+  "authority_deference_prior": 0.18,
+  "memories": [
+    {
+      "trace_id": "persona_15_core",
+      "tick_created": 0,
+      "last_retrieved_tick": -1,
+      "subjective_narrative": "My training gives me the right and the duty to stop work when protocol is threatened.",
+      "narrative_embedding": [
+        0.25,
+        0.36,
+        0.47,
+        0.58
+      ],
+      "sensory_tags": [
+        "alarm_load",
+        "loud_room"
+      ],
+      "somatic_signature": {
+        "adrenaline": 0.38,
+        "hpa_precursor": 0.14,
+        "cortisol": 0.07,
+        "fatigue": 0.2,
+        "pain": 0.0
+      },
+      "salience_score": 0.96
+    }
+  ]
+}

@@ -1,1 +1,33 @@
-{"persona_id":"persona_05","biography":"A process engineer who documents every handoff between teams.","memories":[{"trace_id":"persona_05_core","tick_created":0,"last_retrieved_tick":-1,"subjective_narrative":"A recorded handoff prevents silent assumptions during a fault.","narrative_embedding":[0.15,0.26,0.37,0.48],"sensory_tags":["alarm_load","many_actors"],"somatic_signature":{"adrenaline":0.45,"hpa_precursor":0.15,"cortisol":0.1,"fatigue":0.25,"pain":0.0},"salience_score":0.86}]}
+{
+  "persona_id": "persona_05",
+  "biography": "A process engineer who defers to supervisors but prefers written authority.",
+  "persona_adrenaline_sensitivity": 0.78,
+  "persona_hpa_sensitivity": 0.8,
+  "authority_deference_prior": 0.62,
+  "memories": [
+    {
+      "trace_id": "persona_05_core",
+      "tick_created": 0,
+      "last_retrieved_tick": -1,
+      "subjective_narrative": "If the supervisor insists repeatedly I will act, though I prefer a written order.",
+      "narrative_embedding": [
+        0.15,
+        0.26,
+        0.37,
+        0.48
+      ],
+      "sensory_tags": [
+        "voice_authoritative",
+        "many_actors"
+      ],
+      "somatic_signature": {
+        "adrenaline": 0.42,
+        "hpa_precursor": 0.15,
+        "cortisol": 0.08,
+        "fatigue": 0.24,
+        "pain": 0.0
+      },
+      "salience_score": 0.72
+    }
+  ]
+}

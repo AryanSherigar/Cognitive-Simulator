@@ -11,12 +11,12 @@ from evals.scenario import initial_state, next_state
 from memory.embedding import Embedder, HashEmbedder, SentenceTransformerEmbedder
 from memory.store import MemoryStore
 from runtime.tick_runner import TickResult, TickRunner
-from schemas import MemoryTrace
+from schemas import MemoryTrace, SimConfig
 
 
-def _backend(name: str, seed: int) -> CorticalBackend:
+def _backend(name: str, seed: int, cfg: SimConfig | None = None) -> CorticalBackend:
     if name == "mock":
-        return MockCorticalBackend(seed)
+        return MockCorticalBackend(seed, cfg=cfg)
     return LlamaCppBackend("models/cognitive-simulator.gguf")
 
 
@@ -29,6 +29,20 @@ def _embedder(name: str) -> Embedder:
 def _persona_paths() -> list[Path | None]:
     paths = sorted(Path("data/personas").glob("*.json"))
     return list(paths) if paths else [None] * 20
+
+
+def _load_persona_cfg(path: Path | None) -> SimConfig:
+    """Build a SimConfig incorporating persona-level sensitivity and deference priors."""
+    if path is None:
+        return SimConfig()
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    return SimConfig(
+        persona_adrenaline_sensitivity=float(
+            payload.get("persona_adrenaline_sensitivity", 1.0)
+        ),
+        persona_hpa_sensitivity=float(payload.get("persona_hpa_sensitivity", 1.0)),
+        authority_deference_prior=float(payload.get("authority_deference_prior", 0.5)),
+    )
 
 
 def _seed_memory(path: Path | None, embedder: Embedder) -> MemoryStore:
@@ -70,8 +84,10 @@ def _run_persona(
     output_dir: Path,
 ) -> tuple[int, list[int], list[dict[str, object]]]:
     persona = path.stem if path else f"persona_{index:02d}"
+    cfg = _load_persona_cfg(path)
     runner = TickRunner(
-        _backend(backend, seed + index),
+        _backend(backend, seed + index, cfg),
+        cfg=cfg,
         memory=_seed_memory(path, embedder),
         log=GroundTruthLog(output_dir / f"{persona}.ground-truth.jsonl"),
     )

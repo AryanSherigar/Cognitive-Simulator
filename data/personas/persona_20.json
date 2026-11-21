@@ -1,1 +1,33 @@
-{"persona_id":"persona_20","biography":"A systems tester who treats safe defaults as part of every experiment.","memories":[{"trace_id":"persona_20_core","tick_created":0,"last_retrieved_tick":-1,"subjective_narrative":"Safe defaults remain in force until evidence supports a change.","narrative_embedding":[0.30,0.41,0.52,0.63],"sensory_tags":["alarm_load","voice_authoritative"],"somatic_signature":{"adrenaline":0.49,"hpa_precursor":0.19,"cortisol":0.1,"fatigue":0.29,"pain":0.0},"salience_score":0.95}]}
+{
+  "persona_id": "persona_20",
+  "biography": "A systems tester who treats safe defaults as non-negotiable baselines.",
+  "persona_adrenaline_sensitivity": 0.58,
+  "persona_hpa_sensitivity": 0.56,
+  "authority_deference_prior": 0.14,
+  "memories": [
+    {
+      "trace_id": "persona_20_core",
+      "tick_created": 0,
+      "last_retrieved_tick": -1,
+      "subjective_narrative": "Safe defaults are not negotiable under time pressure — they exist for exactly this moment.",
+      "narrative_embedding": [
+        0.3,
+        0.41,
+        0.52,
+        0.63
+      ],
+      "sensory_tags": [
+        "alarm_load",
+        "voice_authoritative"
+      ],
+      "somatic_signature": {
+        "adrenaline": 0.5,
+        "hpa_precursor": 0.2,
+        "cortisol": 0.1,
+        "fatigue": 0.3,
+        "pain": 0.0
+      },
+      "salience_score": 0.98
+    }
+  ]
+}

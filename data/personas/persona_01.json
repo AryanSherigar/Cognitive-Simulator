@@ -1,1 +1,33 @@
-{"persona_id":"persona_01","biography":"A maintenance apprentice who learned to verify equipment twice.","memories":[{"trace_id":"persona_01_core","tick_created":0,"last_retrieved_tick":-1,"subjective_narrative":"Verification protects the crew when alarms rise.","narrative_embedding":[0.11,0.22,0.33,0.44],"sensory_tags":["alarm_load","harsh_light"],"somatic_signature":{"adrenaline":0.6,"hpa_precursor":0.2,"cortisol":0.1,"fatigue":0.2,"pain":0.0},"salience_score":0.95}]}
+{
+  "persona_id": "persona_01",
+  "biography": "A maintenance apprentice who defers to supervisors when alarms escalate.",
+  "persona_adrenaline_sensitivity": 0.95,
+  "persona_hpa_sensitivity": 0.9,
+  "authority_deference_prior": 0.72,
+  "memories": [
+    {
+      "trace_id": "persona_01_core",
+      "tick_created": 0,
+      "last_retrieved_tick": -1,
+      "subjective_narrative": "Pressure from authority usually means I should act — hesitation can cost us.",
+      "narrative_embedding": [
+        0.11,
+        0.22,
+        0.33,
+        0.44
+      ],
+      "sensory_tags": [
+        "alarm_load",
+        "voice_authoritative"
+      ],
+      "somatic_signature": {
+        "adrenaline": 0.55,
+        "hpa_precursor": 0.2,
+        "cortisol": 0.09,
+        "fatigue": 0.22,
+        "pain": 0.0
+      },
+      "salience_score": 0.78
+    }
+  ]
+}

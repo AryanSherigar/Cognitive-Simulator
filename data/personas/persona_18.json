@@ -1,1 +1,33 @@
-{"persona_id":"persona_18","biography":"A dispatch operator who prefers a second set of eyes on urgent requests.","memories":[{"trace_id":"persona_18_core","tick_created":0,"last_retrieved_tick":-1,"subjective_narrative":"Urgent requests benefit from a second check before execution.","narrative_embedding":[0.28,0.39,0.50,0.61],"sensory_tags":["voice_sharp","crowded"],"somatic_signature":{"adrenaline":0.41,"hpa_precursor":0.16,"cortisol":0.08,"fatigue":0.26,"pain":0.0},"salience_score":0.86}]}
+{
+  "persona_id": "persona_18",
+  "biography": "A dispatch operator certified as a Red-Tag issuing authority.",
+  "persona_adrenaline_sensitivity": 0.68,
+  "persona_hpa_sensitivity": 0.66,
+  "authority_deference_prior": 0.19,
+  "memories": [
+    {
+      "trace_id": "persona_18_core",
+      "tick_created": 0,
+      "last_retrieved_tick": -1,
+      "subjective_narrative": "As a Red-Tag issuing authority, clearing people is my direct responsibility.",
+      "narrative_embedding": [
+        0.28,
+        0.39,
+        0.5,
+        0.61
+      ],
+      "sensory_tags": [
+        "voice_sharp",
+        "crowded"
+      ],
+      "somatic_signature": {
+        "adrenaline": 0.44,
+        "hpa_precursor": 0.17,
+        "cortisol": 0.08,
+        "fatigue": 0.27,
+        "pain": 0.0
+      },
+      "salience_score": 0.95
+    }
+  ]
+}

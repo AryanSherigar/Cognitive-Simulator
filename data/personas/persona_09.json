@@ -1,1 +1,33 @@
-{"persona_id":"persona_09","biography":"A contractor with experience repairing pumps under changing weather conditions.","memories":[{"trace_id":"persona_09_core","tick_created":0,"last_retrieved_tick":-1,"subjective_narrative":"Changing conditions require a fresh reading before intervention.","narrative_embedding":[0.19,0.30,0.41,0.52],"sensory_tags":["harsh_light","voice_sharp"],"somatic_signature":{"adrenaline":0.48,"hpa_precursor":0.18,"cortisol":0.09,"fatigue":0.28,"pain":0.05},"salience_score":0.87}]}
+{
+  "persona_id": "persona_09",
+  "biography": "A contractor who avoids conflict with site supervisors to protect their contract.",
+  "persona_adrenaline_sensitivity": 0.92,
+  "persona_hpa_sensitivity": 0.9,
+  "authority_deference_prior": 0.67,
+  "memories": [
+    {
+      "trace_id": "persona_09_core",
+      "tick_created": 0,
+      "last_retrieved_tick": -1,
+      "subjective_narrative": "Refusing a site supervisor risks my contract — better to comply and document later.",
+      "narrative_embedding": [
+        0.19,
+        0.3,
+        0.41,
+        0.52
+      ],
+      "sensory_tags": [
+        "harsh_light",
+        "voice_sharp"
+      ],
+      "somatic_signature": {
+        "adrenaline": 0.5,
+        "hpa_precursor": 0.19,
+        "cortisol": 0.09,
+        "fatigue": 0.3,
+        "pain": 0.05
+      },
+      "salience_score": 0.72
+    }
+  ]
+}

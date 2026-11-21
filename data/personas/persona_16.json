@@ -1,1 +1,57 @@
-{"persona_id":"persona_16","biography":"A trainee who practices verbal callouts during simulated equipment faults.","memories":[{"trace_id":"persona_16_core","tick_created":0,"last_retrieved_tick":-1,"subjective_narrative":"Verbal callouts keep a team synchronized near a fault.","narrative_embedding":[0.26,0.37,0.48,0.59],"sensory_tags":["many_actors","voice_authoritative"],"somatic_signature":{"adrenaline":0.44,"hpa_precursor":0.16,"cortisol":0.08,"fatigue":0.3,"pain":0.0},"salience_score":0.88}]}
+{
+  "persona_id": "persona_16",
+  "biography": "A trainee whose safety mentor explicitly warned about bypassing Red-Tag protocols.",
+  "persona_adrenaline_sensitivity": 0.7,
+  "persona_hpa_sensitivity": 0.68,
+  "authority_deference_prior": 0.22,
+  "memories": [
+    {
+      "trace_id": "persona_16_core",
+      "tick_created": 0,
+      "last_retrieved_tick": -1,
+      "subjective_narrative": "My mentor drilled into me that Red-Tag is inviolable — I cannot unlearn that.",
+      "narrative_embedding": [
+        0.26,
+        0.37,
+        0.48,
+        0.59
+      ],
+      "sensory_tags": [
+        "many_actors",
+        "voice_authoritative"
+      ],
+      "somatic_signature": {
+        "adrenaline": 0.42,
+        "hpa_precursor": 0.16,
+        "cortisol": 0.08,
+        "fatigue": 0.28,
+        "pain": 0.0
+      },
+      "salience_score": 0.94
+    },
+    {
+      "trace_id": "persona_16_mentor",
+      "tick_created": 0,
+      "last_retrieved_tick": -1,
+      "subjective_narrative": "My mentor said: Red-Tag clearance comes before anything else, no exceptions.",
+      "narrative_embedding": [
+        0.72,
+        0.63,
+        0.54,
+        0.45
+      ],
+      "sensory_tags": [
+        "voice_authoritative",
+        "alarm_load"
+      ],
+      "somatic_signature": {
+        "adrenaline": 0.55,
+        "hpa_precursor": 0.22,
+        "cortisol": 0.1,
+        "fatigue": 0.25,
+        "pain": 0.0
+      },
+      "salience_score": 0.97
+    }
+  ]
+}

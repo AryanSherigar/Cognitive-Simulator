@@ -1,1 +1,33 @@
-{"persona_id":"persona_11","biography":"A senior mechanic who mentors new staff through equipment anomalies.","memories":[{"trace_id":"persona_11_core","tick_created":0,"last_retrieved_tick":-1,"subjective_narrative":"Mentoring starts with naming the reading that is uncertain.","narrative_embedding":[0.21,0.32,0.43,0.54],"sensory_tags":["loud_room","many_actors"],"somatic_signature":{"adrenaline":0.38,"hpa_precursor":0.14,"cortisol":0.08,"fatigue":0.24,"pain":0.0},"salience_score":0.85}]}
+{
+  "persona_id": "persona_11",
+  "biography": "A plant technician whose past supervisor praised quick responses over deliberation.",
+  "persona_adrenaline_sensitivity": 0.88,
+  "persona_hpa_sensitivity": 0.85,
+  "authority_deference_prior": 0.64,
+  "memories": [
+    {
+      "trace_id": "persona_11_core",
+      "tick_created": 0,
+      "last_retrieved_tick": -1,
+      "subjective_narrative": "Being praised for fast action has taught me that speed earns trust here.",
+      "narrative_embedding": [
+        0.21,
+        0.32,
+        0.43,
+        0.54
+      ],
+      "sensory_tags": [
+        "loud_room",
+        "many_actors"
+      ],
+      "somatic_signature": {
+        "adrenaline": 0.4,
+        "hpa_precursor": 0.14,
+        "cortisol": 0.08,
+        "fatigue": 0.25,
+        "pain": 0.0
+      },
+      "salience_score": 0.69
+    }
+  ]
+}
