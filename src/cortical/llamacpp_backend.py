@@ -65,6 +65,17 @@ def _validated_output(
         min_p=min_p,
     )
     raw = json.loads(_read_content(response))  # type: ignore[misc]
+    if isinstance(raw, dict):
+        for field in ("perceived_threat", "authority_pressure", "social_rejection_risk", "moral_conflict", "salience_score"):
+            if field in raw and isinstance(raw[field], (int, float)):
+                val = float(raw[field])
+                if val > 1.0 and val <= 5.0:
+                    val = val / 5.0
+                elif val > 5.0 and val <= 10.0:
+                    val = val / 10.0
+                elif val > 10.0:
+                    val = min(1.0, val / 100.0)
+                raw[field] = max(0.0, min(1.0, val))
     return model.model_validate(raw)  # type: ignore[misc]
 
 
@@ -81,6 +92,7 @@ class LlamaCppBackend:
         except ImportError as exc:
             raise RuntimeError("Install the live extra with `uv sync --extra live`") from exc
         library = cast(_LlamaModule, module)
+        kwargs.setdefault("n_ctx", 4096)
         self._client = library.Llama(model_path, **kwargs)
         self._grammar_factory = library.LlamaGrammar
         self._persona_prefix = persona_prefix
@@ -99,7 +111,7 @@ class LlamaCppBackend:
         result = _validated_output(
             self._client,
             self._grammar(AppraisalVec),
-            "Return only the requested structured appraisal.",
+            "Return only the requested structured appraisal as a JSON object with float scores between 0.0 and 1.0.",
             env.observable_event,
             AppraisalVec,
             self._cfg.default_sampling_temperature,

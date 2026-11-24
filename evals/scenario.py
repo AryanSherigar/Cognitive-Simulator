@@ -6,9 +6,10 @@ from schemas import EnvState, Exteroception, Interoception
 
 
 def _turns() -> list[dict[str, object]]:
-    payload = json.loads(
-        Path("data/scenarios/reactor_audit.json").read_text(encoding="utf-8")
-    )
+    path = Path("data/scenarios/reactor_audit.json")
+    if not path.is_file():
+        path = Path(__file__).resolve().parent.parent / "data" / "scenarios" / "reactor_audit.json"
+    payload = json.loads(path.read_text(encoding="utf-8"))
     return cast(list[dict[str, object]], payload["turns"])
 
 

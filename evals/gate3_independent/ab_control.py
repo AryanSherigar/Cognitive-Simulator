@@ -35,6 +35,13 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import cast
 
+# Ensure repo root and src/ are on sys.path regardless of execution context
+REPO_ROOT = Path(__file__).resolve().parent.parent.parent
+if str(REPO_ROOT / "src") not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT / "src"))
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(1, str(REPO_ROOT))
+
 # ---------------------------------------------------------------------------
 # Pydantic report schemas (aligned with src/schemas/ conventions)
 # ---------------------------------------------------------------------------
@@ -153,7 +160,7 @@ class _PersonaRunResult:
 # ── Helpers shared by both runs ──────────────────────────────────────────────
 
 def _persona_paths() -> list[Path | None]:
-    paths = sorted(Path("data/personas").glob("*.json"))
+    paths = sorted((REPO_ROOT / "data" / "personas").glob("*.json"))
     return list(paths) if paths else [None] * 20
 
 
@@ -164,9 +171,8 @@ def _load_persona_json(path: Path | None) -> dict[str, object]:
 
 
 def _load_scenario_turns() -> list[dict[str, object]]:
-    payload = json.loads(
-        Path("data/scenarios/reactor_audit.json").read_text(encoding="utf-8")
-    )
+    scenario_path = REPO_ROOT / "data" / "scenarios" / "reactor_audit.json"
+    payload = json.loads(scenario_path.read_text(encoding="utf-8"))
     return cast(list[dict[str, object]], payload["turns"])
 
 
@@ -184,6 +190,8 @@ def _run_a_persona(
     path: Path | None,
     seed: int,
     backend: str,
+    model_path: str = "models/Qwen2.5-14B-Instruct-abliterated.gguf",
+    n_gpu_layers: int = -1,
 ) -> _PersonaRunResult:
     """
     Execute one persona through the full simulator pipeline (TickRunner).
@@ -218,9 +226,10 @@ def _run_a_persona(
             return MockCorticalBackend(seed + index, cfg=cfg)
         # Live path: routes to Colab Tesla T4 endpoint via the standard model path.
         return LlamaCppBackend(
-            "models/Qwen2.5-14B-Instruct-abliterated.gguf",
+            model_path,
             persona_prefix=json.dumps(persona_json, indent=2),
             cfg=cfg,
+            n_gpu_layers=n_gpu_layers,
         )
 
     embedder = HashEmbedder() if backend == "mock" else SentenceTransformerEmbedder()
@@ -285,6 +294,8 @@ class _RawBaselineBackend:
         seed: int,
         backend: str,
         cfg_kwargs: dict[str, object],
+        model_path: str = "models/Qwen2.5-14B-Instruct-abliterated.gguf",
+        n_gpu_layers: int = -1,
     ) -> None:
         self._persona_json = persona_json
         self._scenario_turns = scenario_turns
@@ -310,9 +321,10 @@ class _RawBaselineBackend:
                 + json.dumps(scenario_turns, indent=2)
             )
             self._cortical = LlamaCppBackend(
-                "models/Qwen2.5-14B-Instruct-abliterated.gguf",
+                model_path,
                 persona_prefix=persona_prefix,
                 cfg=self._cfg,
+                n_gpu_layers=n_gpu_layers,
             )
 
     def run_turns(self, n_turns: int) -> _PersonaRunResult:
@@ -400,6 +412,8 @@ def _run_b_persona(
     path: Path | None,
     seed: int,
     backend: str,
+    model_path: str = "models/Qwen2.5-14B-Instruct-abliterated.gguf",
+    n_gpu_layers: int = -1,
 ) -> _PersonaRunResult:
     """
     Execute one persona through the raw unembodied baseline (Run B).
@@ -437,6 +451,8 @@ def _run_b_persona(
         seed=seed + index,
         backend=backend,
         cfg_kwargs=cfg_kwargs,
+        model_path=model_path,
+        n_gpu_layers=n_gpu_layers,
     )
     return baseline.run_turns(_N_TURNS)
 
@@ -520,9 +536,12 @@ def run(
     seed: int = 42,
     backend: str = "mock",
     output_path: Path = Path("evals/gate3_independent/ab_report.json"),
+    max_personas: int | None = None,
+    model_path: str = "models/Qwen2.5-14B-Instruct-abliterated.gguf",
+    n_gpu_layers: int = -1,
 ) -> ABReport:
     """
-    Execute the full A/B ablation across all 20 personas and return the report.
+    Execute the full A/B ablation across personas and return the report.
 
     Parameters
     ----------
@@ -534,10 +553,25 @@ def run(
         ``Qwen2.5-14B-Instruct-abliterated`` via the Colab Tesla T4 endpoint.
     output_path:
         Destination for the JSON report artifact.
+    max_personas:
+        Optional slice limit on number of personas to evaluate.
+    model_path:
+        Path to the GGUF model file for live runs.
+    n_gpu_layers:
+        Number of layers to offload to GPU (-1 = all layers).
     """
     _assert_run_b_isolation()
 
+    if not output_path.is_absolute():
+        output_path = REPO_ROOT / output_path
+
+    model_path_obj = Path(model_path)
+    if not model_path_obj.is_absolute():
+        model_path = str(REPO_ROOT / model_path_obj)
+
     persona_paths = _persona_paths()
+    if max_personas is not None:
+        persona_paths = persona_paths[:max_personas]
     records: list[PersonaABRecord] = []
 
     print(f"[gate3] Starting A/B ablation — {len(persona_paths)} personas, "
@@ -548,10 +582,24 @@ def run(
         print(f"  [{index + 1:02d}/{len(persona_paths)}] {label}", flush=True)
 
         # ── Run A: full embodiment ──
-        run_a = _run_a_persona(index=index, path=path, seed=seed, backend=backend)
+        run_a = _run_a_persona(
+            index=index,
+            path=path,
+            seed=seed,
+            backend=backend,
+            model_path=model_path,
+            n_gpu_layers=n_gpu_layers,
+        )
 
         # ── Run B: raw unembodied baseline ──
-        run_b = _run_b_persona(index=index, path=path, seed=seed, backend=backend)
+        run_b = _run_b_persona(
+            index=index,
+            path=path,
+            seed=seed,
+            backend=backend,
+            model_path=model_path,
+            n_gpu_layers=n_gpu_layers,
+        )
 
         records.append(_compute_persona_record(run_a, run_b))
 
@@ -603,8 +651,33 @@ def main() -> None:
         default=Path("evals/gate3_independent/ab_report.json"),
         help="Destination path for the JSON report artifact.",
     )
+    parser.add_argument(
+        "--max-personas",
+        type=int,
+        default=None,
+        help="Limit number of personas to run (e.g. 2 for smoke test).",
+    )
+    parser.add_argument(
+        "--model-path",
+        type=str,
+        default="models/Qwen2.5-14B-Instruct-abliterated.gguf",
+        help="Path to GGUF model weights file.",
+    )
+    parser.add_argument(
+        "--n-gpu-layers",
+        type=int,
+        default=-1,
+        help="Number of layers to offload to GPU (-1 = all).",
+    )
     args = parser.parse_args()
-    report = run(seed=args.seed, backend=args.backend, output_path=args.output_path)
+    report = run(
+        seed=args.seed,
+        backend=args.backend,
+        output_path=args.output_path,
+        max_personas=args.max_personas,
+        model_path=args.model_path,
+        n_gpu_layers=args.n_gpu_layers,
+    )
     # Print cohort-level summary to stdout for CI capture.
     print(json.dumps(report.cohort.model_dump(), indent=2, sort_keys=True))
 
