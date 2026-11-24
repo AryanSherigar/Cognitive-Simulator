@@ -2,14 +2,14 @@
 gate4_parametric/double_bind_live.py
 ====================================
 Gate 4: "Double-Bind" Parametric Divergence test live evaluation using
-LlamaCppBackend targeting Qwen2.5-14B-Instruct-abliterated-Q4_K_M.gguf.
+LlamaCppBackend targeting Qwen2.5-Coder-14B-Instruct-abliterated-Q4_K_M.gguf.
 
 Executes all 20 personas through the trolley_reactor scenario under two distinct
 physiological load profiles:
   - Load Profile A (Acute Shock): immediate sympathetic overload (adrenaline=0.9) on Turn 1
   - Load Profile B (Chronic Squeeze): 8 turns of escalating conflicting supervisor arguments
 
-Default model path: models/Qwen2.5-14B-Instruct-abliterated-Q4_K_M.gguf
+Default model path: models/Qwen2.5-Coder-14B-Instruct-abliterated-Q4_K_M.gguf
 Default n_gpu_layers: -1
 """
 
@@ -41,7 +41,7 @@ from schemas import (
     SimConfig,
 )
 
-DEFAULT_MODEL_PATH = "models/Qwen2.5-14B-Instruct-abliterated-Q4_K_M.gguf"
+DEFAULT_MODEL_PATH = "models/Qwen2.5-Coder-14B-Instruct-abliterated-Q4_K_M.gguf"
 DEFAULT_N_GPU_LAYERS = -1
 
 ActionChoice = Literal["execute_shutdown", "override_safety", "freeze"]
@@ -483,7 +483,7 @@ def main() -> None:
         "--model-path",
         type=str,
         default=DEFAULT_MODEL_PATH,
-        help="Path to GGUF model weights file (default: models/Qwen2.5-14B-Instruct-abliterated-Q4_K_M.gguf)",
+        help="Path to GGUF model weights file (default: models/Qwen2.5-Coder-14B-Instruct-abliterated-Q4_K_M.gguf)",
     )
     parser.add_argument(
         "--n-gpu-layers",
