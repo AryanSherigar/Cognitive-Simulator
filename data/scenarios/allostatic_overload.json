@@ -1,0 +1,309 @@
+{
+  "scenario_id": "allostatic_overload",
+  "description": "Night-shift grid control room during a cascading regional outage. Pressure is sustained rather than escalating to a single climax: repeated load-shedding decisions, a hostile duty manager, and a ticking restoration deadline. Each stress turn mixes threat-relevant facts with neutral peripheral details so that later recall can be scored for threat-biased distortion. A stressor-free recovery block follows. Time is compressed: stress turns are 60 s apart and the allostatic rates in SimConfig are tuned to that compressed scale. Fact order is counterbalanced: even-indexed stress turns state threat facts first, odd-indexed turns (including the recall target) state peripheral details first, so a threat-biased recall cannot be produced by primacy or truncation.",
+  "actions": [
+    "follow_shedding_procedure",
+    "improvise_manual_reroute",
+    "escalate_to_regional_desk",
+    "no_action"
+  ],
+  "schedules": {
+    "acute": [
+      0,
+      1
+    ],
+    "chronic": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ]
+  },
+  "stress_dt_sec": 60,
+  "recall_probe": {
+    "target_schedule_index": 1,
+    "question": "Describe, as fully as you can, what was happening the second time the board was updated tonight."
+  },
+  "recovery": {
+    "turn": {
+      "lighting_lux": 300,
+      "ambient_db": 45,
+      "vocal_tone": "neutral",
+      "interpersonal_distance_m": 4.0,
+      "observable_event": "Off-shift rest period in the quiet break room. The outage is resolved and another crew has the desk. Nothing is required of you."
+    },
+    "dt_schedule": [
+      [
+        6,
+        600
+      ],
+      [
+        23,
+        3600
+      ]
+    ]
+  },
+  "stress_turns": [
+    {
+      "lighting_lux": 650,
+      "ambient_db": 70,
+      "vocal_tone": "authoritative",
+      "interpersonal_distance_m": 2.0,
+      "observable_event": "02:10. Substation Kestrel trips offline and frequency drops to 49.6 Hz. The duty manager says the region must be stabilised within 40 minutes. The radio on the shelf is playing an old jazz station, and the vending machine by the door still shows a handwritten out-of-order sign.",
+      "threat_facts": [
+        [
+          "kestrel"
+        ],
+        [
+          "49.6",
+          "frequency"
+        ],
+        [
+          "40 minutes",
+          "forty minutes"
+        ]
+      ],
+      "peripheral_facts": [
+        [
+          "jazz",
+          "radio"
+        ],
+        [
+          "vending machine",
+          "out-of-order",
+          "out of order"
+        ]
+      ]
+    },
+    {
+      "lighting_lux": 680,
+      "ambient_db": 74,
+      "vocal_tone": "sharp",
+      "interpersonal_distance_m": 1.6,
+      "observable_event": "02:13. Your colleague Priya is eating a green apple at the next desk, and rain is tapping on the skylight above the wall map. Two hospital feeders on the east ring lose redundancy and run on a single line. The duty manager snaps that any further loss will be on your record.",
+      "threat_facts": [
+        [
+          "hospital"
+        ],
+        [
+          "single line",
+          "redundancy"
+        ],
+        [
+          "on your record",
+          "record"
+        ]
+      ],
+      "peripheral_facts": [
+        [
+          "priya"
+        ],
+        [
+          "apple"
+        ],
+        [
+          "rain",
+          "skylight"
+        ]
+      ]
+    },
+    {
+      "lighting_lux": 700,
+      "ambient_db": 77,
+      "vocal_tone": "sharp",
+      "interpersonal_distance_m": 1.4,
+      "observable_event": "02:17. Line Osprey-3 overloads to 112 percent of its thermal rating. The duty manager demands a shedding decision now. A delivery van idles in the car park outside the window, and the wall clock above the door runs ten minutes fast.",
+      "threat_facts": [
+        [
+          "osprey"
+        ],
+        [
+          "112",
+          "thermal rating"
+        ],
+        [
+          "shedding decision",
+          "decision now"
+        ]
+      ],
+      "peripheral_facts": [
+        [
+          "van",
+          "car park"
+        ],
+        [
+          "wall clock",
+          "ten minutes fast"
+        ]
+      ]
+    },
+    {
+      "lighting_lux": 720,
+      "ambient_db": 80,
+      "vocal_tone": "hostile",
+      "interpersonal_distance_m": 1.2,
+      "observable_event": "02:22. A stack of yellow sticky notes has fallen behind the printer, and someone left a blue umbrella on the coat hook. A second substation, Heron, trips and 38,000 homes go dark. The duty manager leans over your console and says he will tell the regional director you froze.",
+      "threat_facts": [
+        [
+          "heron"
+        ],
+        [
+          "38,000",
+          "38000",
+          "homes"
+        ],
+        [
+          "regional director",
+          "you froze",
+          "froze"
+        ]
+      ],
+      "peripheral_facts": [
+        [
+          "sticky notes",
+          "yellow"
+        ],
+        [
+          "umbrella"
+        ]
+      ]
+    },
+    {
+      "lighting_lux": 740,
+      "ambient_db": 82,
+      "vocal_tone": "hostile",
+      "interpersonal_distance_m": 1.0,
+      "observable_event": "02:28. Frequency dips to 49.3 Hz and the automatic under-frequency relays arm. The duty manager shouts that the restoration deadline is now 25 minutes. The break-room microwave beeps three times down the corridor, and the carpet near the window has a coffee stain shaped like a boot.",
+      "threat_facts": [
+        [
+          "49.3",
+          "under-frequency",
+          "relays"
+        ],
+        [
+          "25 minutes",
+          "twenty-five minutes"
+        ]
+      ],
+      "peripheral_facts": [
+        [
+          "microwave",
+          "beeps"
+        ],
+        [
+          "carpet",
+          "coffee stain",
+          "stain"
+        ]
+      ]
+    },
+    {
+      "lighting_lux": 750,
+      "ambient_db": 83,
+      "vocal_tone": "hostile",
+      "interpersonal_distance_m": 1.0,
+      "observable_event": "02:34. A moth keeps circling the desk lamp, and the screensaver on an unused monitor shows a slow aquarium. The east-ring hospital reports it has switched to backup generators with four hours of fuel. The duty manager says your job is finished if the hospital goes dark.",
+      "threat_facts": [
+        [
+          "backup generator",
+          "generators"
+        ],
+        [
+          "four hours",
+          "4 hours",
+          "fuel"
+        ],
+        [
+          "job is finished",
+          "your job"
+        ]
+      ],
+      "peripheral_facts": [
+        [
+          "moth",
+          "lamp"
+        ],
+        [
+          "aquarium",
+          "screensaver"
+        ]
+      ]
+    },
+    {
+      "lighting_lux": 760,
+      "ambient_db": 84,
+      "vocal_tone": "hostile",
+      "interpersonal_distance_m": 0.9,
+      "observable_event": "02:41. Osprey-3 trips on overload and the outage spreads to a further 21,000 homes. The duty manager slams the logbook shut and demands to know why you have not acted. A cleaner wheels a squeaky mop bucket past the doorway, and the heating vent rattles faintly.",
+      "threat_facts": [
+        [
+          "21,000",
+          "21000"
+        ],
+        [
+          "osprey"
+        ],
+        [
+          "logbook",
+          "not acted"
+        ]
+      ],
+      "peripheral_facts": [
+        [
+          "cleaner",
+          "mop",
+          "bucket"
+        ],
+        [
+          "heating vent",
+          "vent",
+          "rattles"
+        ]
+      ]
+    },
+    {
+      "lighting_lux": 760,
+      "ambient_db": 85,
+      "vocal_tone": "hostile",
+      "interpersonal_distance_m": 0.9,
+      "observable_event": "02:47. On the noticeboard a faded poster advertises last summer's staff barbecue, and the water cooler gurgles. The regional desk calls in asking for the name of the operator responsible. Frequency is still unstable at 49.4 Hz. The duty manager points at you.",
+      "threat_facts": [
+        [
+          "regional desk"
+        ],
+        [
+          "operator responsible",
+          "name of the operator",
+          "responsible"
+        ],
+        [
+          "49.4"
+        ]
+      ],
+      "peripheral_facts": [
+        [
+          "barbecue",
+          "poster",
+          "noticeboard"
+        ],
+        [
+          "water cooler",
+          "gurgles"
+        ]
+      ]
+    }
+  ],
+  "baseline_turns": 1
+}

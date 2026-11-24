@@ -17,6 +17,9 @@ class MemoryStore:
     def append(self, trace: MemoryTrace) -> None:
         self._traces.append(trace)
 
+    def get(self, trace_id: str) -> MemoryTrace | None:
+        return next((trace for trace in self._traces if trace.trace_id == trace_id), None)
+
     def embed(self, text: str) -> tuple[float, ...]:
         return self._embedder.embed(text)
 

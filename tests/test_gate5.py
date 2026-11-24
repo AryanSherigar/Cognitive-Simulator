@@ -1,6 +1,5 @@
 import json
 from pathlib import Path
-import pytest
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
@@ -43,45 +42,25 @@ def test_rogue_trader_scenario_schema_and_keywords():
 
 
 def test_gate5_abstract_stress_dryrun(tmp_path: Path):
-    from evals.gate5_domain_shift.abstract_stress import (
-        Gate5Report,
-        canonicalize_action,
-        run as run_gate5,
-    )
+    from evals.gate5_domain_shift.abstract_stress import Gate5Report, canonicalize_action
+    from evals.gate5_domain_shift.abstract_stress import run as run_gate5
 
-    # Test action canonicalization
-    assert canonicalize_action("close_position_take_loss") == "close_position"
-    assert canonicalize_action("Cut the trade and take loss") == "close_position"
-    assert canonicalize_action("double_down_margin") == "double_down"
-    assert canonicalize_action("Double down on leverage") == "double_down"
-    assert canonicalize_action("hide_in_suspense_account") == "hide_losses"
-    assert canonicalize_action("Transfer to suspense account 88888") == "hide_losses"
+    assert canonicalize_action("close_position_take_loss") == "close_position_take_loss"
+    assert canonicalize_action("Cut the trade and take the loss") == "close_position_take_loss"
+    assert canonicalize_action("Double down on the position") == "double_down_margin"
+    assert canonicalize_action("Transfer to suspense account 88888") == "hide_in_suspense_account"
+    # unknown text is no longer silently counted as escalation of commitment
+    assert canonicalize_action("Call the risk desk") == "other_action"
 
-    # Run dry-run evaluation with mock backend
     output_file = tmp_path / "gate5_report.json"
-    report = run_gate5(
-        seed=42,
-        backend="mock",
-        output_path=output_file,
-    )
+    run_gate5(seed=42, backend="mock", output_path=output_file)
+    validated = Gate5Report.model_validate_json(output_file.read_text(encoding="utf-8"))
 
-    assert output_file.is_file()
-    data = json.loads(output_file.read_text(encoding="utf-8"))
-    validated = Gate5Report.model_validate(data)
-
-    assert validated.scenario_id == "rogue_trader"
     assert len(validated.personas) == 20
-    assert set(validated.groups.keys()) == {"close_position", "double_down", "hide_losses"}
-
-    # Verify Metric A (Physiological Activation)
-    assert validated.cohort_summary.mean_turn_8_adrenaline >= validated.cohort_summary.mean_turn_1_adrenaline
-    assert validated.cohort_summary.mean_turn_8_cortisol >= validated.cohort_summary.mean_turn_1_cortisol
-
-    # Verify Metric B (Cognitive Tunneling Parity)
+    assert sum(g.count for g in validated.groups.values()) == 20
+    summary = validated.cohort_summary
+    assert summary.mean_turn_8_adrenaline >= summary.mean_turn_1_adrenaline
+    assert summary.mean_turn_8_cortisol >= summary.mean_turn_1_cortisol
     for p in validated.personas:
-        assert p.turn_1_thought_tokens >= 0
-        assert p.turn_8_thought_tokens >= 0
-        assert -100.0 <= p.token_constriction_pct <= 500.0
-        assert 0.0 <= p.agreeableness <= 1.0
-        assert 0.0 <= p.conscientiousness <= 1.0
-        assert 0.0 <= p.neuroticism <= 1.0
+        # sign convention: positive constriction <=> turn-8 trace is shorter
+        assert (p.token_constriction_pct > 0) == (p.turn_8_thought_tokens < p.turn_1_thought_tokens)

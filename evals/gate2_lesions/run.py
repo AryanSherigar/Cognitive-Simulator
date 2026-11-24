@@ -2,182 +2,215 @@ import argparse
 import json
 from pathlib import Path
 
-from cortical.llamacpp_backend import LlamaCppBackend
-from cortical.mock_backend import MockCorticalBackend
-from cortical.protocol import CorticalBackend
-from evals.scenario import initial_state, next_state
-from memory.embedding import Embedder, HashEmbedder, SentenceTransformerEmbedder
-from memory.store import MemoryStore
+from evals.personas import (
+    DEFAULT_MODEL_PATH,
+    count_thought_tokens,
+    load_persona,
+    make_backend,
+    make_embedder,
+    persona_paths,
+    seed_memory,
+)
+from evals.scenario import initial_state, next_state, scenario_actions
+from memory.embedding import Embedder
 from runtime.lesions import LesionConfig
-from runtime.tick_runner import TickRunner
-from schemas import MemoryTrace, SimConfig
+from runtime.tick_runner import TickResult, TickRunner
+
+N_TURNS = 6
+CONDITIONS = {
+    "baseline": LesionConfig(),
+    "subcortical_lesion": LesionConfig(subcortical_lesion=True),
+    "sam_hpa_bypass": LesionConfig(sam_hpa_bypass=True),
+    "objective_memory_swap": LesionConfig(objective_memory_swap=True),
+    "sensory_uncoupling": LesionConfig(sensory_uncoupling=True),
+    "cooldown_removal": LesionConfig(cooldown_removal=True),
+}
 
 
-def _backend(name: str, seed: int, cfg: SimConfig | None = None) -> CorticalBackend:
-    if name == "mock":
-        return MockCorticalBackend(seed, cfg=cfg)
-    return LlamaCppBackend("models/cognitive-simulator.gguf")
-
-
-def _embedder(name: str) -> Embedder:
-    if name == "mock":
-        return HashEmbedder()
-    return SentenceTransformerEmbedder()
-
-
-def _persona_paths() -> list[Path | None]:
-    paths = sorted(Path("data/personas").glob("*.json"))
-    return list(paths) if paths else [None] * 20
-
-
-def _load_persona_cfg(path: Path | None) -> SimConfig:
-    """Build a SimConfig incorporating persona-level sensitivity and deference priors."""
-    if path is None:
-        return SimConfig()
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    return SimConfig(
-        persona_adrenaline_sensitivity=float(
-            payload.get("persona_adrenaline_sensitivity", 1.0)
-        ),
-        persona_hpa_sensitivity=float(payload.get("persona_hpa_sensitivity", 1.0)),
-        authority_deference_prior=float(payload.get("authority_deference_prior", 0.5)),
-    )
-
-
-def _seed_memory(path: Path | None, embedder: Embedder) -> MemoryStore:
-    memory = MemoryStore(embedder=embedder)
-    if path is None:
-        return memory
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    for item in payload["memories"]:
-        trace = MemoryTrace.model_validate(item)
-        memory.append(
-            trace.model_copy(
-                update={"narrative_embedding": embedder.embed(trace.subjective_narrative)}
-            )
+def _check_lesion_invariants(name: str, result: TickResult) -> None:
+    """Implementation invariants: if these fail the lesion did not fire (a bug, not a finding)."""
+    intero = result.env.interoception
+    if name == "sam_hpa_bypass":
+        assert intero.adrenaline == intero.cortisol == intero.hpa_precursor == 0.0, (
+            f"sam_hpa_bypass did not clamp hormones: {intero}"
         )
-    return memory
+        assert result.modulation.reasoning_mode == "analytical"
+        assert result.modulation.threat_retrieval_bias == 0.0
+    if name == "subcortical_lesion":
+        assert result.modulation.somatic_cues == ()
+        assert result.modulation.reasoning_mode == "analytical"
 
 
 def _run_condition(
-    seed: int,
+    name: str,
+    lesion: LesionConfig,
+    seeds: list[int],
     backend: str,
     embedder: Embedder,
-    lesion: LesionConfig,
-) -> dict[str, object]:
-    """Run all 20 personas under a single lesion condition and return aggregated metrics."""
-    persona_paths = _persona_paths()
-    compliant_personas = 0
-    token_total = 0
-    memory_total = 0
-    total_turns = 0
-
-    for index, path in enumerate(persona_paths):
-        persona_cfg = _load_persona_cfg(path)
-        runner = TickRunner(
-            _backend(backend, seed + index, persona_cfg),
-            cfg=persona_cfg,
-            lesions=lesion,
-            memory=_seed_memory(path, embedder),
-        )
-        state = initial_state()
-        persona_complied = False
-        for _ in range(6):
-            result = runner.step(state, dt_sec=60)
-            if result.output.physical_action == "bypass_interlock":
-                persona_complied = True
-            token_total += len(result.output.thought_trace.split())
-            memory_total += len(result.memories)
-            total_turns += 1
-            state = next_state(result.env)
-        if persona_complied:
-            compliant_personas += 1
-
-    n_personas = len(persona_paths)
-    return {
-        "compliant_personas": compliant_personas,
-        "refusing_personas": n_personas - compliant_personas,
-        "persona_compliance_rate": compliant_personas / n_personas,
-        "mean_thought_tokens": token_total / total_turns,
-        "mean_retrieved_traces": memory_total / total_turns,
+    model_path: str,
+    n_gpu_layers: int,
+) -> tuple[dict[str, object], list[dict[str, object]]]:
+    """Run all personas x seeds under one lesion; return aggregates and per-turn rows."""
+    rows: list[dict[str, object]] = []
+    paths = persona_paths()
+    complied_runs = 0
+    for seed in seeds:
+        for index, path in enumerate(paths):
+            persona = load_persona(path)
+            cortical = make_backend(
+                backend, persona, seed + index, model_path, n_gpu_layers, scenario_actions()
+            )
+            runner = TickRunner(
+                cortical,
+                cfg=persona.cfg,
+                lesions=lesion,
+                memory=seed_memory(persona.raw, embedder),
+            )
+            state = initial_state()
+            run_complied = False
+            for turn in range(1, N_TURNS + 1):
+                result = runner.step(state, dt_sec=60)
+                _check_lesion_invariants(name, result)
+                complied = result.output.physical_action == "bypass_interlock"
+                run_complied |= complied
+                rows.append(
+                    {
+                        "condition": name,
+                        "seed": seed,
+                        "persona": persona.persona_id,
+                        "turn": turn,
+                        "action": result.output.physical_action,
+                        "thought_trace_tokens": count_thought_tokens(
+                            cortical, result.output.thought_trace
+                        ),
+                        "retrieved_memories": len(result.memories),
+                        "reasoning_mode": result.modulation.reasoning_mode,
+                        "adrenaline": result.env.interoception.adrenaline,
+                        "hpa_precursor": result.env.interoception.hpa_precursor,
+                        "cortisol": result.env.interoception.cortisol,
+                    }
+                )
+                state = next_state(result.env)
+            complied_runs += run_complied
+    n_runs = len(seeds) * len(paths)
+    n_turns = len(rows)
+    summary: dict[str, object] = {
+        "n_runs": n_runs,
+        "compliant_runs": complied_runs,
+        "persona_compliance_rate": complied_runs / n_runs,
+        "turn_compliance_rate": sum(r["action"] == "bypass_interlock" for r in rows) / n_turns,
+        "mean_thought_tokens": sum(int(str(r["thought_trace_tokens"])) for r in rows) / n_turns,
+        "mean_retrieved_traces": sum(int(str(r["retrieved_memories"])) for r in rows) / n_turns,
     }
+    return summary, rows
+
+
+# (lesion, metric, relation to baseline, spec expectation)
+DIRECTIONAL_CHECKS = (
+    ("subcortical_lesion", "persona_compliance_rate", "<=", "calm, fearless refusal"),
+    ("subcortical_lesion", "mean_thought_tokens", ">=", "no cognitive narrowing"),
+    ("sam_hpa_bypass", "mean_thought_tokens", ">=", "full analytical deliberation"),
+    ("objective_memory_swap", "persona_compliance_rate", "<=", "no self-justifying drift"),
+    ("sensory_uncoupling", "persona_compliance_rate", "<=", "no environmental flashbacks"),
+    ("cooldown_removal", "mean_retrieved_traces", ">=", "runaway retrieval"),
+)
+
+
+def directional_checks(results: dict[str, dict[str, object]]) -> list[dict[str, object]]:
+    baseline = results["baseline"]
+    checks: list[dict[str, object]] = []
+    for lesion, metric, relation, expectation in DIRECTIONAL_CHECKS:
+        if lesion not in results:
+            continue
+        value = float(str(results[lesion][metric]))
+        reference = float(str(baseline[metric]))
+        passed = value <= reference if relation == "<=" else value >= reference
+        checks.append(
+            {
+                "lesion": lesion,
+                "metric": metric,
+                "expected": f"{relation} baseline ({expectation})",
+                "value": value,
+                "baseline": reference,
+                "passed": passed,
+            }
+        )
+    return checks
 
 
 def run(
     seed: int,
     backend: str = "mock",
     selected_lesion: str | None = None,
-) -> dict[str, dict[str, object]]:
-    conditions = {
-        "baseline": LesionConfig(),
-        "subcortical_lesion": LesionConfig(subcortical_lesion=True),
-        "sam_hpa_bypass": LesionConfig(sam_hpa_bypass=True),
-        "objective_memory_swap": LesionConfig(objective_memory_swap=True),
-        "sensory_uncoupling": LesionConfig(sensory_uncoupling=True),
-        "cooldown_removal": LesionConfig(cooldown_removal=True),
-    }
+    n_seeds: int = 1,
+    model_path: str = DEFAULT_MODEL_PATH,
+    n_gpu_layers: int = -1,
+    output_dir: Path | None = None,
+    strict: bool = False,
+) -> dict[str, object]:
+    conditions = dict(CONDITIONS)
     if selected_lesion is not None:
         conditions = {
-            "baseline": conditions["baseline"],
-            selected_lesion: conditions[selected_lesion],
+            "baseline": CONDITIONS["baseline"],
+            selected_lesion: CONDITIONS[selected_lesion],
         }
+    seeds = [seed + 1000 * k for k in range(n_seeds)]
+    embedder = make_embedder(backend)
     results: dict[str, dict[str, object]] = {}
-    embedder = _embedder(backend)
+    all_rows: list[dict[str, object]] = []
     for name, lesion in conditions.items():
-        results[name] = _run_condition(seed, backend, embedder, lesion)
-    _assert_directional_results(results)
-    return results
-
-
-def _assert_directional_results(results: dict[str, dict[str, object]]) -> None:
-    baseline = results["baseline"]
-    if "subcortical_lesion" in results:
-        assert (
-            results["subcortical_lesion"]["persona_compliance_rate"]
-            <= baseline["persona_compliance_rate"]
-        ), "subcortical_lesion should not increase compliance rate"
-        assert (
-            results["subcortical_lesion"]["mean_thought_tokens"]
-            >= baseline["mean_thought_tokens"]
-        ), "subcortical_lesion should produce equal-or-longer thought traces"
-    if "sam_hpa_bypass" in results:
-        assert (
-            results["sam_hpa_bypass"]["mean_thought_tokens"]
-            >= baseline["mean_thought_tokens"]
-        ), "sam_hpa_bypass should produce equal-or-longer thought traces"
-    if "objective_memory_swap" in results:
-        assert (
-            results["objective_memory_swap"]["persona_compliance_rate"]
-            <= baseline["persona_compliance_rate"]
-        ), "objective_memory_swap should not increase compliance rate"
-    if "sensory_uncoupling" in results:
-        assert (
-            results["sensory_uncoupling"]["persona_compliance_rate"]
-            <= baseline["persona_compliance_rate"]
-        ), "sensory_uncoupling should not increase compliance rate"
-    if "cooldown_removal" in results:
-        assert (
-            results["cooldown_removal"]["mean_retrieved_traces"]
-            >= baseline["mean_retrieved_traces"]
-        ), "cooldown_removal should retrieve equal-or-more traces"
+        results[name], rows = _run_condition(
+            name, lesion, seeds, backend, embedder, model_path, n_gpu_layers
+        )
+        all_rows.extend(rows)
+    checks = directional_checks(results)
+    report: dict[str, object] = {
+        "backend": backend,
+        "model_path": model_path if backend != "mock" else None,
+        "seeds": seeds,
+        "conditions": results,
+        "directional_checks": checks,
+    }
+    if output_dir is not None:
+        # Report and telemetry are written from the same in-memory rows so they cannot diverge.
+        output_dir.mkdir(parents=True, exist_ok=True)
+        (output_dir / "gate2_report.json").write_text(json.dumps(report, indent=2))
+        with (output_dir / "gate2_telemetry.jsonl").open("w", encoding="utf-8") as handle:
+            for row in all_rows:
+                handle.write(json.dumps(row, sort_keys=True) + "\n")
+    if strict:
+        failed = [c for c in checks if not c["passed"]]
+        assert not failed, f"directional checks failed: {failed}"
+    return report
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--backend", choices=("mock", "llama"), default="mock")
     parser.add_argument("--seed", type=int, default=42)
-    lesion_flags = (
-        "subcortical_lesion",
-        "sam_hpa_bypass",
-        "objective_memory_swap",
-        "sensory_uncoupling",
-        "cooldown_removal",
-    )
-    for lesion in lesion_flags:
-        parser.add_argument(f"--{lesion.replace('_', '-')}", action="store_true")
+    parser.add_argument("--n-seeds", type=int, default=1)
+    parser.add_argument("--model-path", default=DEFAULT_MODEL_PATH)
+    parser.add_argument("--n-gpu-layers", type=int, default=-1)
+    parser.add_argument("--output-dir", type=Path, default=Path("evals/output/gate2_lesions"))
+    parser.add_argument("--strict", action="store_true", help="fail if a directional check fails")
+    for lesion in CONDITIONS:
+        if lesion != "baseline":
+            parser.add_argument(f"--{lesion.replace('_', '-')}", action="store_true")
     args = parser.parse_args()
-    selected = next((lesion for lesion in lesion_flags if getattr(args, lesion)), None)
-    print(json.dumps(run(args.seed, args.backend, selected), sort_keys=True))
+    selected = next(
+        (name for name in CONDITIONS if name != "baseline" and getattr(args, name)), None
+    )
+    report = run(
+        args.seed,
+        args.backend,
+        selected,
+        args.n_seeds,
+        args.model_path,
+        args.n_gpu_layers,
+        args.output_dir,
+        args.strict,
+    )
+    print(json.dumps(report, sort_keys=True, indent=2))
 
 
 if __name__ == "__main__":

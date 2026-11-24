@@ -22,6 +22,9 @@ class Interoception(BaseModel):
     cortisol: float = Field(ge=0, le=1)
     fatigue: float = Field(ge=0, le=1)
     pain: float = Field(ge=0, le=1)
+    # Cumulative wear from sustained cortisol above set-point (McEwen's allostatic load).
+    # Integrates slowly, clears slowly; drives fatigue and cortical compute throttling.
+    allostatic_load: float = Field(default=0.0, ge=0, le=1)
     sympathetic_overload: bool = False
     parasympathetic_shutdown: bool = False
 

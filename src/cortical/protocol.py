@@ -7,6 +7,7 @@ from schemas import (
     EnvState,
     MemoryTrace,
     ModulationSignal,
+    RecallOutput,
 )
 
 
@@ -20,3 +21,11 @@ class CorticalBackend(Protocol):
     def consolidate(
         self, env: EnvState, modulation: ModulationSignal, output: CorticalTurnOutput
     ) -> ConsolidationOutput: ...
+
+    def recall(
+        self,
+        env: EnvState,
+        modulation: ModulationSignal,
+        trace: MemoryTrace,
+        probe: str,
+    ) -> RecallOutput: ...

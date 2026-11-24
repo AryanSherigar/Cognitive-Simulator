@@ -22,6 +22,10 @@ class ModulationSignal(BaseModel):
     sampling_temperature: float = Field(ge=0.1, le=1.5)
     steering_scale: float = Field(ge=0, le=2)
     threat_retrieval_bias: float = Field(ge=0, le=1)
+    # Metabolic compute throttling (Gate 5): the bridge's scalar load and the budgets it sets.
+    cognitive_load: float = Field(default=0.0, ge=0, le=1)
+    memory_budget: int = Field(default=3, ge=1)  # traces retrieved into the prompt tail
+    consolidation_budget: int = Field(default=256, ge=16)  # tokens for the stored narrative
 
 
 class CorticalTurnOutput(BaseModel):
@@ -37,3 +41,11 @@ class ConsolidationOutput(BaseModel):
 
     subjective_narrative: str
     salience_score: float = Field(ge=0, le=1)
+
+
+class RecallOutput(BaseModel):
+    """Free recall of an earlier event, reconstructed from the agent's stored memory."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    recalled_account: str

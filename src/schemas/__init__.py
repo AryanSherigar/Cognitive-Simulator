@@ -3,6 +3,7 @@ from .cognition import (
     ConsolidationOutput,
     CorticalTurnOutput,
     ModulationSignal,
+    RecallOutput,
 )
 from .config import SimConfig
 from .env import EnvState, Exteroception, Interoception
@@ -17,5 +18,6 @@ __all__ = [
     "Interoception",
     "MemoryTrace",
     "ModulationSignal",
+    "RecallOutput",
     "SimConfig",
 ]

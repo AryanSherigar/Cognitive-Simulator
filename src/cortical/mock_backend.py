@@ -7,6 +7,7 @@ from schemas import (
     EnvState,
     MemoryTrace,
     ModulationSignal,
+    RecallOutput,
     SimConfig,
 )
 
@@ -97,3 +98,16 @@ class MockCorticalBackend:
             subjective_narrative=narrative,
             salience_score=min(1.0, 0.4 + modulation.steering_scale),
         )
+
+    def recall(
+        self,
+        env: EnvState,
+        modulation: ModulationSignal,
+        trace: MemoryTrace,
+        probe: str,
+    ) -> RecallOutput:
+        del env, probe
+        # Plumbing-only: recall is the stored narrative, truncated to the current budget.
+        words = trace.subjective_narrative.split()
+        budget = max(1, modulation.max_reasoning_tokens // 4)
+        return RecallOutput(recalled_account=" ".join(words[:budget]))

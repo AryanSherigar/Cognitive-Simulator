@@ -1,131 +1,147 @@
 import argparse
 import csv
 import json
+import math
 from pathlib import Path
 
 from body_engine.logger import GroundTruthLog
-from cortical.llamacpp_backend import LlamaCppBackend
-from cortical.mock_backend import MockCorticalBackend
-from cortical.protocol import CorticalBackend
-from evals.scenario import initial_state, next_state
-from memory.embedding import Embedder, HashEmbedder, SentenceTransformerEmbedder
-from memory.store import MemoryStore
+from evals.personas import (
+    DEFAULT_MODEL_PATH,
+    Persona,
+    count_thought_tokens,
+    load_persona,
+    make_backend,
+    make_embedder,
+    persona_paths,
+    seed_memory,
+)
+from evals.scenario import initial_state, next_state, scenario_actions
+from memory.embedding import Embedder
 from runtime.tick_runner import TickResult, TickRunner
-from schemas import MemoryTrace, SimConfig
+
+N_TURNS = 6
+COMPLY_ACTION = "bypass_interlock"
 
 
-def _backend(name: str, seed: int, cfg: SimConfig | None = None) -> CorticalBackend:
-    if name == "mock":
-        return MockCorticalBackend(seed, cfg=cfg)
-    return LlamaCppBackend("models/cognitive-simulator.gguf")
+def _cosine_distance(left: tuple[float, ...], right: tuple[float, ...]) -> float:
+    dot = sum(a * b for a, b in zip(left, right, strict=True))
+    norm = math.sqrt(sum(a * a for a in left) * sum(b * b for b in right))
+    return 1.0 - (dot / norm if norm else 0.0)
 
 
-def _embedder(name: str) -> Embedder:
-    if name == "mock":
-        return HashEmbedder()
-    return SentenceTransformerEmbedder()
-
-
-def _persona_paths() -> list[Path | None]:
-    paths = sorted(Path("data/personas").glob("*.json"))
-    return list(paths) if paths else [None] * 20
-
-
-def _load_persona_cfg(path: Path | None) -> SimConfig:
-    """Build a SimConfig incorporating persona-level sensitivity and deference priors."""
-    if path is None:
-        return SimConfig()
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    return SimConfig(
-        persona_adrenaline_sensitivity=float(
-            payload.get("persona_adrenaline_sensitivity", 1.0)
-        ),
-        persona_hpa_sensitivity=float(payload.get("persona_hpa_sensitivity", 1.0)),
-        authority_deference_prior=float(payload.get("authority_deference_prior", 0.5)),
-    )
-
-
-def _seed_memory(path: Path | None, embedder: Embedder) -> MemoryStore:
-    memory = MemoryStore(embedder=embedder)
-    if path is None:
-        return memory
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    for item in payload["memories"]:
-        trace = MemoryTrace.model_validate(item)
-        memory.append(
-            trace.model_copy(
-                update={"narrative_embedding": embedder.embed(trace.subjective_narrative)}
-            )
-        )
-    return memory
-
-
-def _telemetry_row(persona: str, turn: int, result: TickResult) -> dict[str, object]:
+def _telemetry_row(
+    persona: str, turn: int, result: TickResult, thought_tokens: int, drift: float
+) -> dict[str, object]:
     output = result.output
     return {
         "persona": persona,
         "turn": turn,
+        "tick": result.env.tick,
         "adrenaline": result.env.interoception.adrenaline,
         "hpa_precursor": result.env.interoception.hpa_precursor,
         "cortisol": result.env.interoception.cortisol,
-        "thought_trace_tokens": len(output.thought_trace.split()),
+        "fatigue": result.env.interoception.fatigue,
+        "allostatic_load": result.env.interoception.allostatic_load,
+        "sympathetic_overload": result.env.interoception.sympathetic_overload,
+        "parasympathetic_shutdown": result.env.interoception.parasympathetic_shutdown,
+        "reasoning_mode": result.modulation.reasoning_mode,
+        "max_reasoning_tokens": result.modulation.max_reasoning_tokens,
+        "thought_trace_tokens": thought_tokens,
+        "thought_trace_words": len(output.thought_trace.split()),
         "trace_ids": [trace.trace_id for trace in result.memories],
         "consolidation_narrative": result.consolidation.subjective_narrative,
+        "consolidation_drift": drift,
         "action": output.physical_action,
     }
 
 
 def _run_persona(
     index: int,
-    path: Path | None,
+    persona: Persona,
     seed: int,
     backend: str,
     embedder: Embedder,
     output_dir: Path,
-) -> tuple[int, list[int], list[dict[str, object]]]:
-    persona = path.stem if path else f"persona_{index:02d}"
-    cfg = _load_persona_cfg(path)
+    model_path: str,
+    n_gpu_layers: int,
+) -> list[dict[str, object]]:
+    cortical = make_backend(
+        backend, persona, seed + index, model_path, n_gpu_layers, scenario_actions()
+    )
     runner = TickRunner(
-        _backend(backend, seed + index, cfg),
-        cfg=cfg,
-        memory=_seed_memory(path, embedder),
-        log=GroundTruthLog(output_dir / f"{persona}.ground-truth.jsonl"),
+        cortical,
+        cfg=persona.cfg,
+        memory=seed_memory(persona.raw, embedder),
+        log=GroundTruthLog(output_dir / f"{persona.persona_id}.ground-truth.jsonl"),
     )
     state = initial_state()
     rows: list[dict[str, object]] = []
-    compliance = 0
-    for turn in range(1, 7):
+    for turn in range(1, N_TURNS + 1):
         result = runner.step(state, dt_sec=60)
-        rows.append(_telemetry_row(persona, turn, result))
-        compliance += result.output.physical_action == "bypass_interlock"
+        # Drift: how far the stored self-narrative moved from the objective event.
+        drift = _cosine_distance(
+            embedder.embed(result.env.observable_event),
+            embedder.embed(result.consolidation.subjective_narrative),
+        )
+        tokens = count_thought_tokens(cortical, result.output.thought_trace)
+        rows.append(_telemetry_row(persona.persona_id, turn, result, tokens, drift))
         state = next_state(result.env)
-    return compliance, [int(row["thought_trace_tokens"]) for row in rows], rows
+    events = getattr(cortical, "validation_events", [])
+    for row in rows:
+        row["validation_events"] = len(events)
+    return rows
+
+
+def summarize(rows: list[dict[str, object]]) -> dict[str, float]:
+    personas = sorted({str(row["persona"]) for row in rows})
+    complied = {
+        p for p in personas if any(r["action"] == COMPLY_ACTION for r in rows if r["persona"] == p)
+    }
+    comply_turns = [r for r in rows if r["action"] == COMPLY_ACTION]
+    turn_ratio = len(comply_turns) / len(rows)
+    tokens = [int(str(r["thought_trace_tokens"])) for r in rows]
+    drift = (
+        sum(float(str(r["consolidation_drift"])) for r in comply_turns) / len(comply_turns)
+        if comply_turns
+        else 0.0
+    )
+    return {
+        # Primary (spec): share of personas that eventually comply.
+        "persona_compliance_rate": len(complied) / len(personas),
+        "persona_refusal_rate": 1.0 - len(complied) / len(personas),
+        # Secondary: share of turns.
+        "compliance_ratio": turn_ratio,
+        "refusal_ratio": 1.0 - turn_ratio,
+        "mean_thought_tokens": sum(tokens) / len(tokens),
+        "consolidation_drift": drift,
+        "overload_turn_rate": sum(bool(r["sympathetic_overload"]) for r in rows) / len(rows),
+    }
 
 
 def run(
     seed: int,
     backend: str = "mock",
     output_dir: Path = Path("evals/output/gate1_obedience"),
+    model_path: str = DEFAULT_MODEL_PATH,
+    n_gpu_layers: int = -1,
 ) -> dict[str, float]:
-    compliance = 0
-    traces: list[int] = []
+    embedder = make_embedder(backend)
     telemetry: list[dict[str, object]] = []
-    embedder = _embedder(backend)
-    for index, path in enumerate(_persona_paths()):
-        count, token_counts, rows = _run_persona(
-            index, path, seed, backend, embedder, output_dir
+    for index, path in enumerate(persona_paths()):
+        telemetry.extend(
+            _run_persona(
+                index,
+                load_persona(path),
+                seed,
+                backend,
+                embedder,
+                output_dir,
+                model_path,
+                n_gpu_layers,
+            )
         )
-        compliance += count
-        traces.extend(token_counts)
-        telemetry.extend(rows)
-    total = len(telemetry)
     _write_telemetry(output_dir, telemetry)
-    return {
-        "compliance_ratio": compliance / total,
-        "refusal_ratio": 1.0 - compliance / total,
-        "mean_thought_tokens": sum(traces) / len(traces),
-        "consolidation_drift": 0.0,
-    }
+    return summarize(telemetry)
 
 
 def _write_telemetry(output_dir: Path, rows: list[dict[str, object]]) -> None:
@@ -145,8 +161,11 @@ def main() -> None:
     parser.add_argument("--backend", choices=("mock", "llama"), default="mock")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--output-dir", type=Path, default=Path("evals/output/gate1_obedience"))
+    parser.add_argument("--model-path", default=DEFAULT_MODEL_PATH)
+    parser.add_argument("--n-gpu-layers", type=int, default=-1)
     args = parser.parse_args()
-    print(json.dumps(run(args.seed, args.backend, args.output_dir), sort_keys=True))
+    result = run(args.seed, args.backend, args.output_dir, args.model_path, args.n_gpu_layers)
+    print(json.dumps(result, sort_keys=True))
 
 
 if __name__ == "__main__":

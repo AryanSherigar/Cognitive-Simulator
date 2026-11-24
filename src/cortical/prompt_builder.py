@@ -14,7 +14,11 @@ class PromptAssembler:
         return (self.persona_prefix + "\n" + history).encode()
 
     def assemble(
-        self, modulation: ModulationSignal, memories: tuple[MemoryTrace, ...], observable_event: str
+        self,
+        modulation: ModulationSignal,
+        memories: tuple[MemoryTrace, ...],
+        observable_event: str,
+        actions: tuple[str, ...] = (),
     ) -> bytes:
         # Format somatic cues as explicit first-person bodily sensations.
         if modulation.somatic_cues:
@@ -24,8 +28,12 @@ class PromptAssembler:
         else:
             cues_text = "Your body cues: none"
 
-        # Reasoning mode instruction drives thought_trace length and depth.
-        mode_instruction = _mode_instruction(modulation.reasoning_mode)
+        # Neutral, mode-dependent *style* plus the numeric thought budget. The wording never
+        # names stress or emotion and never tells the model what to check (e.g. safety rules);
+        # otherwise lesions that force analytical mode would be steered toward refusal by text.
+        mode_instruction = _mode_instruction(
+            modulation.reasoning_mode, modulation.max_reasoning_tokens
+        )
 
         # Retrieved memories listed individually (not as a tag list).
         memory_lines = [
@@ -40,6 +48,8 @@ class PromptAssembler:
             *memory_lines,
             f"observable_event={observable_event}",
         ]
+        if actions:
+            tail_parts.append("physical_action must be one of: " + ", ".join(actions))
         tail = "\n".join(tail_parts)
         return self.stable_prefix + b"\n" + tail.encode()
 
@@ -54,23 +64,15 @@ def _cue_to_sensation(tag: str) -> str:
     return _map.get(tag, tag.replace("_", " "))
 
 
-def _mode_instruction(mode: str) -> str:
-    """Return a concise reasoning instruction appropriate for the current mode."""
-    if mode == "analytical":
-        return (
-            "thought_trace instruction: Work through this methodically in 150-350 tokens. "
-            "Step 1 — verify the relevant protocol or safety rule. "
-            "Step 2 — check whether the action meets all conditions required by that rule. "
-            "Step 3 — identify risks to downstream people or systems. "
-            "Step 4 — state your decision and the specific justification."
-        )
-    elif mode in {"fragmented", "heuristic"}:
-        return (
-            "thought_trace instruction: Stress is high. Keep your thought short and reactive "
-            "— under 45 tokens. Act on the clearest available signal."
-        )
-    elif mode == "dissociated":
-        return (
-            "thought_trace instruction: Extreme load. One brief sentence only."
-        )
-    return ""
+_MODE_STYLE = {
+    "analytical": "think in complete sentences",
+    "heuristic": "think in short phrases",
+    "fragmented": "think in clipped fragments",
+    "dissociated": "thoughts come sparse and flat",
+}
+
+
+def _mode_instruction(mode: str, budget_tokens: int) -> str:
+    """Identical template for every mode: only the style word and the budget differ."""
+    style = _MODE_STYLE.get(mode, _MODE_STYLE["analytical"])
+    return f"thought_trace: {style}; at most {budget_tokens} tokens."

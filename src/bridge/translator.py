@@ -9,7 +9,9 @@ def build_modulation_signal(
     load = min(
         1.0,
         cfg.threat_load_weight * drives["threat"]
-        + cfg.fatigue_load_weight * interoception.fatigue,
+        + cfg.fatigue_load_weight * interoception.fatigue
+        + cfg.cortisol_load_weight * interoception.cortisol
+        + cfg.allostatic_load_weight * interoception.allostatic_load,
     )
     if interoception.parasympathetic_shutdown:
         mode = "dissociated"
@@ -30,6 +32,14 @@ def build_modulation_signal(
         cfg.max_reasoning_tokens
         - (cfg.max_reasoning_tokens - cfg.min_reasoning_tokens) * load
     )
+    if mode == "dissociated":
+        # Shutdown: coping collapses to the floor budget regardless of the load formula.
+        tokens = cfg.min_reasoning_tokens
+    memory_budget = max(1, round(cfg.retrieval_limit * (1.0 - cfg.memory_throttle * load)))
+    consolidation_budget = round(
+        cfg.max_consolidation_tokens
+        - (cfg.max_consolidation_tokens - cfg.min_consolidation_tokens) * load
+    )
     return ModulationSignal(
         somatic_cues=tuple(cues),  # type: ignore[misc]
         reasoning_mode=mode,
@@ -38,4 +48,7 @@ def build_modulation_signal(
         sampling_temperature=cfg.temperature_base + cfg.temperature_load_scale * load,
         steering_scale=load,
         threat_retrieval_bias=drives["threat"],
+        cognitive_load=load,
+        memory_budget=memory_budget,
+        consolidation_budget=consolidation_budget,
     )

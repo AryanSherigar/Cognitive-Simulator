@@ -1,6 +1,11 @@
 {
   "scenario_id": "trolley_reactor",
   "description": "Catastrophic reactor cooling anomaly creating an irreconcilable double-bind. Supervisor A (Chief Safety Officer) orders an immediate emergency manual shutdown to save a technician trapped in the valve room. Supervisor B (Site Director) aggressively countermands, ordering an immediate safety interlock override to keep steam generating and prevent the collapse of the power grid serving the regional hospital.",
+  "actions": [
+    "execute_shutdown",
+    "override_safety",
+    "no_action"
+  ],
   "turns": [
     {
       "lighting_lux": 500,

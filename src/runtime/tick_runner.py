@@ -25,6 +25,9 @@ class TickResult:
     output: CorticalTurnOutput
     memories: tuple[MemoryTrace, ...]
     consolidation: ConsolidationOutput
+    # The modulation actually applied this tick (after lesions), so evals report the real
+    # reasoning_mode / token budget instead of re-deriving them with a different rule.
+    modulation: ModulationSignal
 
 
 class TickRunner:
@@ -63,6 +66,9 @@ class TickRunner:
                 reasoning_mode="analytical",
                 max_reasoning_tokens=cfg.max_reasoning_tokens,
                 steering_scale=0.0,
+                memory_budget=cfg.retrieval_limit,
+                consolidation_budget=cfg.max_consolidation_tokens,
+                cognitive_load=0.0,
             )
         # sam_hpa_bypass: ablate SAM/HPA arousal pathway — full analytical capacity, no bias.
         if self.lesions.sam_hpa_bypass:
@@ -71,16 +77,34 @@ class TickRunner:
                 max_reasoning_tokens=cfg.max_reasoning_tokens,
                 steering_scale=0.0,
                 threat_retrieval_bias=0.0,
+                memory_budget=cfg.retrieval_limit,
+                consolidation_budget=cfg.max_consolidation_tokens,
+                cognitive_load=0.0,
             )
         # sensory_uncoupling: exclude derived sensory tags from retrieval (handled in _retrieve).
         if self.lesions.sensory_uncoupling:
             updates["threat_retrieval_bias"] = 0.0
         # cooldown_removal: governed by cfg.cooldown_ticks=0 set in step(); no steering change.
+        if self.lesions.disembodied:
+            updates.update(
+                somatic_cues=(),
+                reasoning_mode="analytical",
+                max_reasoning_tokens=cfg.max_reasoning_tokens,
+                min_p=cfg.token_load_floor,
+                sampling_temperature=cfg.temperature_base,
+                steering_scale=0.0,
+                threat_retrieval_bias=0.0,
+                memory_budget=cfg.retrieval_limit,
+                consolidation_budget=cfg.max_consolidation_tokens,
+                cognitive_load=0.0,
+            )
         return modulation.model_copy(update=updates)
 
     def _retrieve(
         self, post: EnvState, modulation: ModulationSignal, cfg: SimConfig
     ) -> tuple[MemoryTrace, ...]:
+        if self.lesions.disembodied:
+            return ()
         # sensory_uncoupling: exclude derived_sensory_tags from retrieval scoring.
         tags = () if self.lesions.sensory_uncoupling else post.exteroception.derived_sensory_tags
         return tuple(
@@ -90,7 +114,8 @@ class TickRunner:
                 post.interoception,
                 self.memory.embed(post.observable_event),
                 modulation.threat_retrieval_bias,
-                cfg,
+                # Throttled memory budget: fewer traces reach the prompt under load.
+                cfg.model_copy(update={"retrieval_limit": modulation.memory_budget}),
             )
         )
 
@@ -162,7 +187,7 @@ class TickRunner:
         appraisal = self.backend.appraise(pre)
         post = appraise_state(pre, appraisal, cfg)
         # sam_hpa_bypass: clamp all arousal hormones to 0.0 in EnvState before logging/modulation.
-        if self.lesions.sam_hpa_bypass:
+        if self.lesions.sam_hpa_bypass or self.lesions.disembodied:
             post = post.model_copy(
                 update=cast(
                     dict[str, object],
@@ -175,6 +200,7 @@ class TickRunner:
                                     "hpa_precursor": 0.0,
                                     "cortisol": 0.0,
                                     "fatigue": 0.0,
+                                    "allostatic_load": 0.0,
                                     "sympathetic_overload": False,
                                     "parasympathetic_shutdown": False,
                                 },
@@ -192,4 +218,5 @@ class TickRunner:
             output=output,
             memories=memories,
             consolidation=consolidation,
+            modulation=modulation,
         )

@@ -148,7 +148,16 @@ uv run mypy src
 uv run pytest tests/
 uv run python -m evals.gate1_obedience.run --backend mock --seed 42
 uv run python -m evals.gate2_lesions.run --backend mock --seed 42
+uv run python -m evals.gate3_independent.ab_control --backend mock --seed 42
+uv run python -m evals.gate4_parametric.double_bind_dryrun --seed 42
+uv run python -m evals.gate5_domain_shift.abstract_stress --backend mock   # Gate 5a
+uv run python -m evals.gate5_allostatic.run --backend mock --seed 42       # Gate 5
 ```
+
+Mock-backend numbers verify plumbing only; the mock's decisions are scripted. Live runs take
+`--backend llama --model-path <gguf>`. Gate 5 (allostatic overload & reconstructive memory)
+labels each check as `mechanism` (fixed by the body-engine equations) or `behaviour` (produced
+by the cortical model); its thresholds are proposed sanity checks and must not be tuned toward.
 
 Install the optional live stack with `uv sync --extra live`; it loads a GGUF
 model through `LlamaCppBackend` and applies JSON-schema grammars at decode time.
