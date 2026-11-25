@@ -30,6 +30,10 @@ _UNIT_INTERVAL_FIELDS = (
 )
 
 
+# Conservative chars-per-token bound for turning a token budget into a grammar maxLength.
+_CHARS_PER_TOKEN = 3
+
+
 class TruncatedOutputError(RuntimeError):
     """The model hit max_tokens before closing the JSON object."""
 
@@ -135,9 +139,17 @@ class LlamaCppBackend:
     def _prompt_assembler(self) -> PromptAssembler:
         return PromptAssembler(self._persona_prefix, tuple(self._dialogue_history))
 
-    def _grammar(self, model: type[BaseModel]) -> object:
-        schema = json.dumps(model.model_json_schema(), separators=(",", ":"))  # type: ignore[misc]
-        return self._grammar_factory.from_json_schema(schema)
+    def _grammar(
+        self, model: type[BaseModel], max_chars: dict[str, int] | None = None
+    ) -> object:
+        schema = model.model_json_schema()  # type: ignore[misc]
+        # Grammar-enforced length caps: a prompt-only "at most N tokens" is soft, and a free
+        # string field can otherwise run to max_tokens and truncate the JSON mid-string.
+        for field, limit in (max_chars or {}).items():
+            schema["properties"][field]["maxLength"] = limit
+        return self._grammar_factory.from_json_schema(
+            json.dumps(schema, separators=(",", ":"))  # type: ignore[misc]
+        )
 
     def _normalize(self, call: str, raw: dict[str, object]) -> None:
         for field in _UNIT_INTERVAL_FIELDS:
@@ -161,13 +173,14 @@ class LlamaCppBackend:
         temperature: float,
         max_tokens: int,
         min_p: float,
+        max_chars: dict[str, int] | None = None,
     ) -> BaseModel:
         response = self._client.create_chat_completion(
             messages=(
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt},
             ),
-            grammar=self._grammar(model),
+            grammar=self._grammar(model, max_chars),
             temperature=temperature,
             max_tokens=max_tokens,
             min_p=min_p,
@@ -252,6 +265,9 @@ class LlamaCppBackend:
             self._cfg.default_sampling_temperature,
             modulation.consolidation_budget + self._cfg.structured_output_overhead_tokens,
             self._cfg.token_load_floor,
+            # Enforce the encoding-narrowing budget in the grammar (conservative chars/token)
+            # so the narrative cannot outrun max_tokens and truncate the JSON.
+            {"subjective_narrative": modulation.consolidation_budget * _CHARS_PER_TOKEN},
         )
         return cast(ConsolidationOutput, result)
 

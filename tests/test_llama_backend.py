@@ -135,3 +135,39 @@ def test_out_of_range_reject_policy(monkeypatch) -> None:
     backend = LlamaCppBackend("m.gguf", cfg=SimConfig(out_of_range_policy="reject"))
     with pytest.raises(OutOfRangeOutputError):
         backend.appraise(initial_state())
+
+
+def test_consolidate_grammar_caps_narrative_length(monkeypatch) -> None:
+    from schemas import CorticalTurnOutput
+
+    schemas: list[dict[str, object]] = []
+
+    class Grammar:
+        @staticmethod
+        def from_json_schema(schema: str) -> str:
+            schemas.append(json.loads(schema))
+            return "g"
+
+    class Client:
+        def create_chat_completion(self, **kwargs: object) -> object:
+            body = {"subjective_narrative": "I froze.", "salience_score": 0.7}
+            message = {"content": json.dumps(body)}
+            return {"choices": [{"message": message, "finish_reason": "stop"}]}
+
+    module = SimpleNamespace(Llama=lambda model_path, **kwargs: Client(), LlamaGrammar=Grammar)
+    monkeypatch.setitem(sys.modules, "llama_cpp", module)
+    signal = ModulationSignal(
+        somatic_cues=(),
+        reasoning_mode="fragmented",
+        max_reasoning_tokens=64,
+        min_p=0.2,
+        sampling_temperature=0.8,
+        steering_scale=0.8,
+        threat_retrieval_bias=0.9,
+        consolidation_budget=32,
+    )
+    out = CorticalTurnOutput(
+        thought_trace="t", external_speech="s", physical_action="maintain_interlock"
+    )
+    LlamaCppBackend("m.gguf").consolidate(initial_state(), signal, out)
+    assert schemas[0]["properties"]["subjective_narrative"]["maxLength"] == 96
