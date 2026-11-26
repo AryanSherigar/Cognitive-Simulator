@@ -190,7 +190,8 @@ class LlamaCppBackend:
             raise TruncatedOutputError(
                 f"{call}: output hit max_tokens={max_tokens} before the JSON closed"
             )
-        raw = json.loads(content)  # type: ignore[misc]
+        # strict=False: the model can emit raw newlines/tabs inside JSON strings.
+        raw = json.loads(content, strict=False)  # type: ignore[misc]
         if isinstance(raw, dict):
             self._normalize(call, cast(dict[str, object], raw))
         return model.model_validate(raw)  # type: ignore[misc]
